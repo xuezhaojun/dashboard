@@ -4,15 +4,13 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import ClusterList from './components/ClusterList';
 import ClusterDetail from './components/ClusterDetail';
 import Login from './components/Login';
+import { Button } from '@/components/ui/button';
 
 // Protected route component that redirects to login if not authenticated
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
 
-  console.log('ProtectedRoute: isAuthenticated =', isAuthenticated);
-
   if (!isAuthenticated) {
-    console.log('Redirecting to login...');
     return <Navigate to="/login" />;
   }
 
@@ -24,19 +22,26 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
   const { logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">OCM Dashboard</h1>
-          <button
-            onClick={logout}
-            className="text-sm text-gray-600 hover:text-gray-900 focus:outline-none"
-          >
-            Logout
-          </button>
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 max-w-screen-2xl items-center">
+          <div className="mr-4 flex">
+            <a className="mr-6 flex items-center space-x-2" href="/">
+              <span className="font-bold inline-block">OCM Dashboard</span>
+            </a>
+          </div>
+          <div className="flex flex-1 items-center justify-end space-x-2">
+            <Button
+              onClick={logout}
+              variant="ghost"
+              className="text-sm"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="container max-w-screen-2xl py-6">
         {children}
       </main>
     </div>
@@ -44,61 +49,49 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 function AppContent() {
-  console.log('AppContent rendering...');
-
   return (
     <Router>
-      <div style={{border: '2px solid red', padding: '20px', margin: '20px'}}>
-        <h1>Debug: App Content Rendering</h1>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/clusters"
-            element={
-              <ProtectedRoute>
-                <AuthenticatedLayout>
-                  <ClusterList />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/clusters/:name"
-            element={
-              <ProtectedRoute>
-                <AuthenticatedLayout>
-                  <ClusterDetail />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/clusters" />} />
-          <Route path="*" element={<Navigate to="/clusters" />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/clusters"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <ClusterList />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clusters/:name"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <ClusterDetail />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/clusters" />} />
+        <Route path="*" element={<Navigate to="/clusters" />} />
+      </Routes>
     </Router>
   );
 }
 
 function App() {
-  console.log('App component rendering...');
-
   useEffect(() => {
-    console.log('App mounted, DEV =', import.meta.env.DEV);
     // Force log in for development
     if (import.meta.env.DEV) {
       localStorage.setItem('authToken', 'dev-mock-token');
-      console.log('Dev token set in localStorage');
     }
   }, []);
 
   return (
-    <div style={{border: '2px solid blue', padding: '10px'}}>
-      <h1>Debug: App Component Loaded</h1>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </div>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

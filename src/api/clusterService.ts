@@ -36,8 +36,9 @@ const createHeaders = (): HeadersInit => {
 
 // Fetch all clusters
 export const fetchClusters = async (): Promise<Cluster[]> => {
-  // For MVP, we'll still use mock data if no API is available
-  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
+  // For MVP development, always use mock data to avoid connection errors
+  if (import.meta.env.DEV) {
+    console.log('Using mock cluster data in development mode');
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve([
@@ -64,6 +65,18 @@ export const fetchClusters = async (): Promise<Cluster[]> => {
               region: "us-west-1",
               env: "staging"
             }
+          },
+          {
+            id: "mock-cluster-3",
+            name: "production-cluster",
+            status: "Online",
+            version: "4.13.1",
+            nodes: 8,
+            labels: {
+              vendor: "OpenShift",
+              region: "eu-central-1",
+              env: "production"
+            }
           }
         ]);
       }, 800);
@@ -88,7 +101,8 @@ export const fetchClusters = async (): Promise<Cluster[]> => {
 
 // Fetch a single cluster by name
 export const fetchClusterByName = async (name: string): Promise<Cluster | null> => {
-  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
+  if (import.meta.env.DEV) {
+    console.log('Using mock cluster detail data in development mode');
     return new Promise((resolve) => {
       setTimeout(() => {
         if (name === "mock-cluster-1") {
@@ -135,6 +149,34 @@ export const fetchClusterByName = async (name: string): Promise<Cluster | null> 
               }
             ]
           });
+        } else if (name === "production-cluster" || name === "mock-cluster-3") {
+          resolve({
+            id: "mock-cluster-3",
+            name: "production-cluster",
+            status: "Online",
+            version: "4.13.1",
+            nodes: 8,
+            labels: {
+              vendor: "OpenShift",
+              region: "eu-central-1",
+              env: "production",
+              tier: "platinum"
+            },
+            conditions: [
+              {
+                type: "ManagedClusterConditionAvailable",
+                status: "True",
+                reason: "ClusterAvailable",
+                message: "Cluster is available and healthy"
+              },
+              {
+                type: "ManagedClusterConditionUpgradeable",
+                status: "True",
+                reason: "ClusterUpgradeable",
+                message: "Cluster is ready for upgrade"
+              }
+            ]
+          });
         } else {
           resolve(null);
         }
@@ -165,9 +207,29 @@ export const setupClusterEventSource = (
   onDelete: (clusterId: string) => void,
   onError: (error: Event) => void
 ): () => void => {
-  // In development mode without real API, we don't set up SSE
-  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
-    return () => {}; // Return no-op cleanup function
+  // In development mode, we don't set up SSE
+  if (import.meta.env.DEV) {
+    console.log('Skipping SSE setup in development mode');
+    // Simulate adding a cluster after 5 seconds
+    const timerId = setTimeout(() => {
+      console.log('Simulating new cluster added');
+      onAdd({
+        id: "mock-cluster-4",
+        name: "dynamic-test-cluster",
+        status: "Online",
+        version: "4.14.0",
+        nodes: 4,
+        labels: {
+          vendor: "OpenShift",
+          region: "ap-southeast-1",
+          env: "testing"
+        }
+      });
+    }, 5000);
+
+    return () => {
+      clearTimeout(timerId);
+    };
   }
 
   // Create EventSource for SSE

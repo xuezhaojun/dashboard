@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchClusterByName } from '../api/clusterService';
 import type { Cluster } from '../api/clusterService';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ClusterDetail = () => {
   const { name } = useParams<{ name: string }>();
@@ -33,15 +40,34 @@ const ClusterDetail = () => {
   }, [name]);
 
   const getStatusColor = (status: string) => {
-    if (status === 'Online') return 'bg-green-500';
-    if (status === 'Offline') return 'bg-red-500';
-    return 'bg-gray-400';
+    if (status === 'Online') return 'bg-emerald-500';
+    if (status === 'Offline') return 'bg-destructive';
+    return 'bg-muted';
   };
 
   if (loading) {
     return (
-      <div className="p-6 flex justify-center">
-        <div className="text-center py-8">Loading cluster details...</div>
+      <div className="p-6">
+        <div className="flex items-center mb-6">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/clusters">Back to clusters</Link>
+          </Button>
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-[200px]" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <Skeleton className="h-4 w-[300px]" />
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+              </div>
+              <Skeleton className="h-[200px] w-full" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -49,131 +75,135 @@ const ClusterDetail = () => {
   if (error || !cluster) {
     return (
       <div className="p-6">
-        <div className="mb-4">
-          <Link to="/clusters" className="text-blue-600 hover:text-blue-800">
-            &lt; Back to clusters
-          </Link>
+        <div className="flex items-center mb-6">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/clusters">Back to clusters</Link>
+          </Button>
         </div>
-        <div className="bg-red-50 p-4 border border-red-200 rounded-md">
-          <p className="text-red-600">{error || 'Cluster not found'}</p>
-        </div>
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center space-y-4">
+              <p className="text-destructive font-medium">{error || 'Cluster not found'}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="p-6">
-      <div className="mb-4">
-        <Link to="/clusters" className="text-blue-600 hover:text-blue-800">
-          &lt; Back to clusters
-        </Link>
+      <div className="flex items-center mb-6">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/clusters">Back to clusters</Link>
+        </Button>
       </div>
 
-      <div className="bg-white shadow rounded-lg mb-6">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">{cluster.name}</h1>
-            <span className="inline-flex items-center">
-              <span className={`h-3 w-3 rounded-full mr-2 ${getStatusColor(cluster.status)}`}></span>
-              {cluster.status}
-            </span>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <div className="flex items-center space-x-4">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-primary/10 text-primary">
+                {cluster.name.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <CardTitle className="text-2xl">{cluster.name}</CardTitle>
           </div>
-        </div>
+          <div className="flex items-center">
+            <span className={`h-3 w-3 rounded-full mr-2 ${getStatusColor(cluster.status)}`}></span>
+            <span>{cluster.status}</span>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="conditions" disabled={!cluster.conditions || cluster.conditions.length === 0}>
+                Conditions
+              </TabsTrigger>
+              <TabsTrigger value="labels" disabled={!cluster.labels || Object.keys(cluster.labels).length === 0}>
+                Labels
+              </TabsTrigger>
+            </TabsList>
 
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-lg font-medium mb-3">Cluster Information</h2>
-              <table className="min-w-full">
-                <tbody>
-                  <tr>
-                    <td className="py-2 pr-4 text-sm font-medium text-gray-500">ID</td>
-                    <td className="py-2 text-sm text-gray-900">{cluster.id}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 text-sm font-medium text-gray-500">Version</td>
-                    <td className="py-2 text-sm text-gray-900">{cluster.version || 'Unknown'}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 text-sm font-medium text-gray-500">Nodes</td>
-                    <td className="py-2 text-sm text-gray-900">{cluster.nodes || 'Unknown'}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {cluster.labels && Object.keys(cluster.labels).length > 0 && (
-              <div>
-                <h2 className="text-lg font-medium mb-3">Labels</h2>
-                <div className="bg-gray-50 p-4 rounded-md">
-                  {Object.entries(cluster.labels).map(([key, value]) => (
-                    <div key={key} className="mb-1">
-                      <span className="text-xs font-medium bg-gray-200 text-gray-800 px-2 py-1 rounded mr-2">
-                        {key}
-                      </span>
-                      <span className="text-xs text-gray-600">{value}</span>
-                    </div>
-                  ))}
+            <TabsContent value="overview">
+              <div className="space-y-4">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium w-32">ID</TableCell>
+                        <TableCell>{cluster.id}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Version</TableCell>
+                        <TableCell>{cluster.version || 'Unknown'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Nodes</TableCell>
+                        <TableCell>{cluster.nodes || 'Unknown'}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
-            )}
-          </div>
+            </TabsContent>
 
-          {cluster.conditions && cluster.conditions.length > 0 && (
-            <div className="mt-6">
-              <h2 className="text-lg font-medium mb-3">Conditions</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Reason
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Transition
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {cluster.conditions.map((condition, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm">{condition.type}</td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            condition.status === 'True' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {condition.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-sm">{condition.reason || '-'}</td>
-                        <td className="px-4 py-2 text-sm">{condition.lastTransitionTime || '-'}</td>
-                      </tr>
+            <TabsContent value="conditions">
+              {cluster.conditions && cluster.conditions.length > 0 && (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Reason</TableHead>
+                        <TableHead>Last Transition</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cluster.conditions.map((condition, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{condition.type}</TableCell>
+                          <TableCell>
+                            <Badge variant={condition.status === 'True' ? "secondary" : "destructive"}>
+                              {condition.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{condition.reason || '-'}</TableCell>
+                          <TableCell>{condition.lastTransitionTime || '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="labels">
+              {cluster.labels && Object.keys(cluster.labels).length > 0 && (
+                <div className="bg-muted/50 p-4 rounded-md">
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(cluster.labels).map(([key, value]) => (
+                      <div key={key} className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-background">
+                        <span className="font-medium mr-1">{key}:</span>
+                        <span className="text-muted-foreground">{value}</span>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6">
-            <button
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded"
-              onClick={() => {
-                // In a real app, this would generate a YAML representation of the cluster
-                alert('YAML download functionality will be implemented in the future');
-              }}
-            >
-              Download YAML
-            </button>
-          </div>
-        </div>
-      </div>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="flex justify-end border-t pt-6">
+          <Button variant="outline" onClick={() => {
+            alert('YAML download functionality will be implemented in the future');
+          }}>
+            Download YAML
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
