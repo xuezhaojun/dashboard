@@ -1,6 +1,6 @@
 module github.com/your-org/ocm-dashboard/backend
 
-go 1.22
+go 1.24.1
 
 require (
 	github.com/gin-contrib/cors v1.5.0

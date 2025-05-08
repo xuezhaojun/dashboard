@@ -11,6 +11,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(() => {
+    // In development mode, always return a mock token unless VITE_USE_REAL_AUTH is set
+    if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_AUTH) {
+      return 'dev-mock-token';
+    }
     return localStorage.getItem('authToken');
   });
 

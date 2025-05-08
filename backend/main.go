@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -18,6 +19,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -82,12 +84,33 @@ func main() {
 		}
 		log.Println("Using in-cluster configuration")
 	} else {
-		// creates the out-of-cluster config
-		config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
-		if err != nil {
-			log.Fatalf("Error building kubeconfig: %v", err)
+		// First try to use the KUBECONFIG environment variable
+		kubeconfigEnv := os.Getenv("KUBECONFIG")
+		if kubeconfigEnv != "" {
+			log.Printf("Using KUBECONFIG from environment: %s", kubeconfigEnv)
+			config, err = clientcmd.BuildConfigFromFlags("", kubeconfigEnv)
+			if err != nil {
+				log.Printf("Error building kubeconfig from KUBECONFIG env: %v", err)
+				// Fall back to command line flag or default
+			}
 		}
-		log.Println("Using kubeconfig from:", *kubeconfig)
+
+		// If KUBECONFIG env var didn't work, try the flag or default path
+		if config == nil {
+			log.Printf("Using kubeconfig from flag or default: %s", *kubeconfig)
+			config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+			if err != nil {
+				// Try the load rules (will check multiple locations)
+				log.Printf("Trying default client config loading rules")
+				loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+				configOverrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmdapi.Cluster{Server: ""}}
+				kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+				config, err = kubeConfig.ClientConfig()
+				if err != nil {
+					log.Fatalf("Error building kubeconfig using defaults: %v", err)
+				}
+			}
+		}
 	}
 
 	// Create dynamic client
@@ -96,10 +119,24 @@ func main() {
 		log.Fatalf("Error creating dynamic client: %v", err)
 	}
 
+	// Debug message to verify connection
+	log.Println("Successfully created Kubernetes client")
+
 	// Create a context
 	ctx := context.Background()
 
+	// Check if debug mode is enabled
+	debugMode := os.Getenv("DASHBOARD_DEBUG") == "true"
+	if debugMode {
+		log.Println("Debug mode enabled")
+	}
+
 	// Set up Gin router
+	if debugMode {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	r := gin.Default()
 
 	// Configure CORS
@@ -137,9 +174,63 @@ func main() {
 
 		// API endpoints
 		api.GET("/clusters", authMiddleware, func(c *gin.Context) {
-			// List managed clusters
+			// Check if using mock data
+			if os.Getenv("DASHBOARD_USE_MOCK") == "true" {
+				// Return mock data
+				mockClusters := []Cluster{
+					{
+						ID:      "mock-cluster-1",
+						Name:    "mock-cluster-1",
+						Status:  "Online",
+						Version: "4.12.0",
+						Nodes:   3,
+						Labels: map[string]string{
+							"vendor": "OpenShift",
+							"region": "us-east-1",
+							"env":    "development",
+						},
+						Conditions: []Condition{
+							{
+								Type:               "ManagedClusterConditionAvailable",
+								Status:             "True",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+								Reason:             "ClusterAvailable",
+								Message:            "Cluster is available",
+							},
+						},
+					},
+					{
+						ID:      "mock-cluster-2",
+						Name:    "mock-cluster-2",
+						Status:  "Offline",
+						Version: "4.11.0",
+						Nodes:   5,
+						Labels: map[string]string{
+							"vendor": "OpenShift",
+							"region": "us-west-1",
+							"env":    "staging",
+						},
+						Conditions: []Condition{
+							{
+								Type:               "ManagedClusterConditionAvailable",
+								Status:             "False",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+								Reason:             "ClusterOffline",
+								Message:            "Cluster is not responding",
+							},
+						},
+					},
+				}
+				c.JSON(http.StatusOK, mockClusters)
+				return
+			}
+
+			// Normal processing - list real managed clusters
 			list, err := dynamicClient.Resource(managedClusterResource).List(ctx, metav1.ListOptions{})
 			if err != nil {
+				if debugMode {
+					log.Printf("Error listing clusters: %v", err)
+				}
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
@@ -215,9 +306,85 @@ func main() {
 		api.GET("/clusters/:name", authMiddleware, func(c *gin.Context) {
 			name := c.Param("name")
 
-			// Get the cluster
+			// Check if using mock data
+			if os.Getenv("DASHBOARD_USE_MOCK") == "true" {
+				// Mock a single cluster based on name
+				if name == "mock-cluster-1" {
+					mockCluster := Cluster{
+						ID:      "mock-cluster-1",
+						Name:    "mock-cluster-1",
+						Status:  "Online",
+						Version: "4.12.0",
+						Nodes:   3,
+						Labels: map[string]string{
+							"vendor": "OpenShift",
+							"region": "us-east-1",
+							"env":    "development",
+							"tier":   "gold",
+						},
+						Conditions: []Condition{
+							{
+								Type:               "ManagedClusterConditionAvailable",
+								Status:             "True",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+								Reason:             "ClusterAvailable",
+								Message:            "Cluster is available",
+							},
+							{
+								Type:               "ManagedClusterConditionJoined",
+								Status:             "True",
+								LastTransitionTime: time.Now().AddDate(0, 0, -5).Format(time.RFC3339),
+								Reason:             "ClusterJoined",
+								Message:            "Cluster has joined the hub",
+							},
+						},
+					}
+					c.JSON(http.StatusOK, mockCluster)
+					return
+				} else if name == "mock-cluster-2" {
+					mockCluster := Cluster{
+						ID:      "mock-cluster-2",
+						Name:    "mock-cluster-2",
+						Status:  "Offline",
+						Version: "4.11.0",
+						Nodes:   5,
+						Labels: map[string]string{
+							"vendor": "OpenShift",
+							"region": "us-west-1",
+							"env":    "staging",
+							"tier":   "silver",
+						},
+						Conditions: []Condition{
+							{
+								Type:               "ManagedClusterConditionAvailable",
+								Status:             "False",
+								LastTransitionTime: time.Now().AddDate(0, 0, -1).Format(time.RFC3339),
+								Reason:             "ClusterOffline",
+								Message:            "Cluster is not responding",
+							},
+							{
+								Type:               "ManagedClusterConditionJoined",
+								Status:             "True",
+								LastTransitionTime: time.Now().AddDate(0, -1, 0).Format(time.RFC3339),
+								Reason:             "ClusterJoined",
+								Message:            "Cluster has joined the hub",
+							},
+						},
+					}
+					c.JSON(http.StatusOK, mockCluster)
+					return
+				} else {
+					c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Mock cluster %s not found", name)})
+					return
+				}
+			}
+
+			// Get the real cluster
 			item, err := dynamicClient.Resource(managedClusterResource).Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
+				if debugMode {
+					log.Printf("Error getting cluster %s: %v", name, err)
+				}
 				c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Cluster %s not found", name)})
 				return
 			}
@@ -301,13 +468,91 @@ func main() {
 				close(done)
 			}()
 
-			// Create informer for ManagedCluster events
+			// Check if using mock data
+			useMock := os.Getenv("DASHBOARD_USE_MOCK") == "true"
+			if useMock && debugMode {
+				log.Println("Using mock data for SSE endpoint")
+			}
+
+			// For mock data, send simulated cluster updates
+			if useMock {
+				// Initial set of mock clusters
+				mockClusters := []Cluster{
+					{
+						ID:      "mock-cluster-1",
+						Name:    "mock-cluster-1",
+						Status:  "Online",
+						Version: "4.12.0",
+						Nodes:   3,
+					},
+					{
+						ID:      "mock-cluster-2",
+						Name:    "mock-cluster-2",
+						Status:  "Offline",
+						Version: "4.11.0",
+						Nodes:   5,
+					},
+				}
+
+				// Send initial clusters as ADDED events
+				for _, cluster := range mockClusters {
+					clusterJSON, _ := json.Marshal(cluster)
+					fmt.Fprintf(c.Writer, "event: ADDED\ndata: %s\n\n", string(clusterJSON))
+					c.Writer.Flush()
+				}
+
+				// Every 10 seconds, toggle the status of one cluster
+				ticker := time.NewTicker(10 * time.Second)
+				heartbeat := time.NewTicker(5 * time.Second)
+				toggleIndex := 0
+
+				defer ticker.Stop()
+				defer heartbeat.Stop()
+
+				for {
+					select {
+					case <-ticker.C:
+						// Toggle status for one cluster
+						toggleCluster := mockClusters[toggleIndex]
+						if toggleCluster.Status == "Online" {
+							toggleCluster.Status = "Offline"
+						} else {
+							toggleCluster.Status = "Online"
+						}
+						mockClusters[toggleIndex] = toggleCluster
+
+						// Send the MODIFIED event
+						clusterJSON, _ := json.Marshal(toggleCluster)
+						fmt.Fprintf(c.Writer, "event: MODIFIED\ndata: %s\n\n", string(clusterJSON))
+						c.Writer.Flush()
+
+						// Alternate between clusters
+						toggleIndex = (toggleIndex + 1) % len(mockClusters)
+					case <-heartbeat.C:
+						// Send heartbeat
+						fmt.Fprintf(c.Writer, "event: heartbeat\ndata: %s\n\n", time.Now().Format(time.RFC3339))
+						c.Writer.Flush()
+					case <-done:
+						// Client disconnected
+						if debugMode {
+							log.Println("SSE client disconnected")
+						}
+						return
+					}
+				}
+			}
+
+			// Create informer for ManagedCluster events (for real data)
 			// This is just a placeholder - in a real implementation we would use an informer
 			// to watch for changes to ManagedClusters
 
 			// For now, just send a heartbeat every 10 seconds to keep the connection alive
 			ticker := time.NewTicker(10 * time.Second)
 			defer ticker.Stop()
+
+			if debugMode {
+				log.Println("Starting real SSE stream with heartbeat")
+			}
 
 			for {
 				select {
@@ -317,11 +562,22 @@ func main() {
 					c.Writer.Flush()
 				case <-done:
 					// Client disconnected
+					if debugMode {
+						log.Println("SSE client disconnected")
+					}
 					return
 				}
 			}
 		})
 	}
+
+	// Add static file handling
+	r.Static("/static", "./static")
+
+	// Add a root handler to redirect to frontend
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/static/index.html")
+	})
 
 	// Start the server
 	port := os.Getenv("PORT")

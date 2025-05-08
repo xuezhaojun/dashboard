@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import ClusterList from './components/ClusterList';
@@ -5,10 +6,13 @@ import ClusterDetail from './components/ClusterDetail';
 import Login from './components/Login';
 
 // Protected route component that redirects to login if not authenticated
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
 
+  console.log('ProtectedRoute: isAuthenticated =', isAuthenticated);
+
   if (!isAuthenticated) {
+    console.log('Redirecting to login...');
     return <Navigate to="/login" />;
   }
 
@@ -16,7 +20,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 };
 
 // Layout component with header for authenticated pages
-const AuthenticatedLayout = ({ children }: { children: JSX.Element }) => {
+const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
   const { logout } = useAuth();
 
   return (
@@ -40,42 +44,61 @@ const AuthenticatedLayout = ({ children }: { children: JSX.Element }) => {
 };
 
 function AppContent() {
+  console.log('AppContent rendering...');
+
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/clusters"
-          element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <ClusterList />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/clusters/:name"
-          element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <ClusterDetail />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/" element={<Navigate to="/clusters" />} />
-        <Route path="*" element={<Navigate to="/clusters" />} />
-      </Routes>
+      <div style={{border: '2px solid red', padding: '20px', margin: '20px'}}>
+        <h1>Debug: App Content Rendering</h1>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/clusters"
+            element={
+              <ProtectedRoute>
+                <AuthenticatedLayout>
+                  <ClusterList />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clusters/:name"
+            element={
+              <ProtectedRoute>
+                <AuthenticatedLayout>
+                  <ClusterDetail />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/clusters" />} />
+          <Route path="*" element={<Navigate to="/clusters" />} />
+        </Routes>
+      </div>
     </Router>
   );
 }
 
 function App() {
+  console.log('App component rendering...');
+
+  useEffect(() => {
+    console.log('App mounted, DEV =', import.meta.env.DEV);
+    // Force log in for development
+    if (import.meta.env.DEV) {
+      localStorage.setItem('authToken', 'dev-mock-token');
+      console.log('Dev token set in localStorage');
+    }
+  }, []);
+
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <div style={{border: '2px solid blue', padding: '10px'}}>
+      <h1>Debug: App Component Loaded</h1>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </div>
   );
 }
 

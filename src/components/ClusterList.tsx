@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Cluster, fetchClusters, setupClusterEventSource } from '../api/clusterService';
+import { fetchClusters, setupClusterEventSource } from '../api/clusterService';
+import type { Cluster } from '../api/clusterService';
 
 const ClusterList = () => {
   const [clusters, setClusters] = useState<Cluster[]>([]);
@@ -103,8 +104,8 @@ const ClusterList = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {clusters.map((cluster) => (
-                <tr key={cluster.id} className="hover:bg-gray-50">
+              {clusters.map((cluster, index) => (
+                <tr key={`${cluster.id}-${index}`} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
                       to={`/clusters/${cluster.name}`}

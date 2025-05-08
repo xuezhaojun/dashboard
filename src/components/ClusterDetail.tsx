@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Cluster, fetchClusterByName } from '../api/clusterService';
+import { fetchClusterByName } from '../api/clusterService';
+import type { Cluster } from '../api/clusterService';
 
 const ClusterDetail = () => {
   const { name } = useParams<{ name: string }>();

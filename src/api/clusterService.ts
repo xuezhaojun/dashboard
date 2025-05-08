@@ -14,6 +14,9 @@ export interface Cluster {
   labels?: Record<string, string>;
 }
 
+// Make sure we also export a type to avoid compiler issues
+export type { Cluster as ClusterType };
+
 // Backend API base URL - will be configurable for production
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
@@ -37,7 +40,32 @@ export const fetchClusters = async (): Promise<Cluster[]> => {
   if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve([]);
+        resolve([
+          {
+            id: "mock-cluster-1",
+            name: "mock-cluster-1",
+            status: "Online",
+            version: "4.12.0",
+            nodes: 3,
+            labels: {
+              vendor: "OpenShift",
+              region: "us-east-1",
+              env: "development"
+            }
+          },
+          {
+            id: "mock-cluster-2",
+            name: "mock-cluster-2",
+            status: "Offline",
+            version: "4.11.0",
+            nodes: 5,
+            labels: {
+              vendor: "OpenShift",
+              region: "us-west-1",
+              env: "staging"
+            }
+          }
+        ]);
       }, 800);
     });
   }
@@ -63,7 +91,53 @@ export const fetchClusterByName = async (name: string): Promise<Cluster | null> 
   if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(null);
+        if (name === "mock-cluster-1") {
+          resolve({
+            id: "mock-cluster-1",
+            name: "mock-cluster-1",
+            status: "Online",
+            version: "4.12.0",
+            nodes: 3,
+            labels: {
+              vendor: "OpenShift",
+              region: "us-east-1",
+              env: "development",
+              tier: "gold"
+            },
+            conditions: [
+              {
+                type: "ManagedClusterConditionAvailable",
+                status: "True",
+                reason: "ClusterAvailable",
+                message: "Cluster is available"
+              }
+            ]
+          });
+        } else if (name === "mock-cluster-2") {
+          resolve({
+            id: "mock-cluster-2",
+            name: "mock-cluster-2",
+            status: "Offline",
+            version: "4.11.0",
+            nodes: 5,
+            labels: {
+              vendor: "OpenShift",
+              region: "us-west-1",
+              env: "staging",
+              tier: "silver"
+            },
+            conditions: [
+              {
+                type: "ManagedClusterConditionAvailable",
+                status: "False",
+                reason: "ClusterOffline",
+                message: "Cluster is not responding"
+              }
+            ]
+          });
+        } else {
+          resolve(null);
+        }
       }, 800);
     });
   }
