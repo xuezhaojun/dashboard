@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import ClusterList from './components/ClusterList';
 import ClusterDetail from './components/ClusterDetail';
 import Login from './components/Login';
+import { MuiThemeProvider } from './theme/ThemeProvider';
 
 // Protected route component that redirects to login if not authenticated
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -48,34 +49,31 @@ function AppContent() {
 
   return (
     <Router>
-      <div style={{border: '2px solid red', padding: '20px', margin: '20px'}}>
-        <h1>Debug: App Content Rendering</h1>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/clusters"
-            element={
-              <ProtectedRoute>
-                <AuthenticatedLayout>
-                  <ClusterList />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/clusters/:name"
-            element={
-              <ProtectedRoute>
-                <AuthenticatedLayout>
-                  <ClusterDetail />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/clusters" />} />
-          <Route path="*" element={<Navigate to="/clusters" />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/clusters"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <ClusterList />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clusters/:name"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <ClusterDetail />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/clusters" />} />
+        <Route path="*" element={<Navigate to="/clusters" />} />
+      </Routes>
     </Router>
   );
 }
@@ -93,12 +91,11 @@ function App() {
   }, []);
 
   return (
-    <div style={{border: '2px solid blue', padding: '10px'}}>
-      <h1>Debug: App Component Loaded</h1>
+    <MuiThemeProvider mode="light">
       <AuthProvider>
         <AppContent />
       </AuthProvider>
-    </div>
+    </MuiThemeProvider>
   );
 }
 
