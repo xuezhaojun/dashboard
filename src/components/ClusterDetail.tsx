@@ -32,12 +32,6 @@ const ClusterDetail = () => {
     loadClusterDetails();
   }, [name]);
 
-  const getStatusColor = (status: string) => {
-    if (status === 'Online') return 'bg-green-500';
-    if (status === 'Offline') return 'bg-red-500';
-    return 'bg-gray-400';
-  };
-
   if (loading) {
     return (
       <div>
