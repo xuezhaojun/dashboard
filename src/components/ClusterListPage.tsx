@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNaviate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -42,7 +41,6 @@ import {
   Download as DownloadIcon,
 } from "@mui/icons-material";
 import { fetchClusters } from '../api/clusterService';
-import type { Cluster } from '../api/clusterService';
 
 // 模拟集群数据
 const clusters = [
@@ -137,7 +135,7 @@ const namespaces = [
   { id: "ns-6", name: "app-backend", status: "active", pods: 4, services: 2 },
 ];
 
-const ClusterList = () => {
+export default function ClusterListPage() {
   const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -579,6 +577,4 @@ const ClusterList = () => {
       )}
     </Box>
   );
-};
-
-export default ClusterList;
+}

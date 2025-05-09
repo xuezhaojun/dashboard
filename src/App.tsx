@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
-import ClusterList from './components/ClusterList';
 import ClusterDetail from './components/ClusterDetail';
 import Login from './components/Login';
+import AppShell from './components/layout/AppShell';
+import PlaceholderPage from './components/PlaceholderPage';
+import OverviewPage from './components/OverviewPage';
+import ClusterListPage from './components/ClusterListPage';
 import { MuiThemeProvider } from './theme/ThemeProvider';
 
 // Protected route component that redirects to login if not authenticated
@@ -20,29 +23,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
-// Layout component with header for authenticated pages
-const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
-  const { logout } = useAuth();
-
-  return (
-    <div>
-      <header>
-        <div>
-          <h1>OCM Dashboard</h1>
-          <button
-            onClick={logout}
-          >
-            Logout
-          </button>
-        </div>
-      </header>
-      <main>
-        {children}
-      </main>
-    </div>
-  );
-};
-
 function AppContent() {
   console.log('AppContent rendering...');
 
@@ -50,28 +30,27 @@ function AppContent() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+
+        {/* 将 AppShell 作为所有受保护路由的父级布局 */}
         <Route
-          path="/clusters"
+          path="/"
           element={
             <ProtectedRoute>
-              <AuthenticatedLayout>
-                <ClusterList />
-              </AuthenticatedLayout>
+              <AppShell />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/clusters/:name"
-          element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <ClusterDetail />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/" element={<Navigate to="/clusters" />} />
-        <Route path="*" element={<Navigate to="/clusters" />} />
+        >
+          {/* 子路由将在 AppShell 的 <Outlet /> 位置渲染 */}
+          <Route path="overview" element={<OverviewPage />} />
+          <Route path="clusters" element={<ClusterListPage />} />
+          <Route path="clusters/:name" element={<ClusterDetail />} />
+          <Route path="placements" element={<PlaceholderPage title="Placements" />} />
+          <Route path="policies" element={<PlaceholderPage title="Policies" />} />
+          <Route path="addons" element={<PlaceholderPage title="Add-ons" />} />
+          <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+          <Route index element={<Navigate to="/overview" />} />
+          <Route path="*" element={<Navigate to="/overview" />} />
+        </Route>
       </Routes>
     </Router>
   );
