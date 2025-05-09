@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind directives removed */
 
 /* Basic debugging styles to confirm CSS is loading */
 body {
