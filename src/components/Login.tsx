@@ -57,8 +57,8 @@ const Login = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        height: '100%',
-        flex: 1,
+        minHeight: '100vh',
+        width: '100%',
         bgcolor: theme => theme.palette.background.default,
       }}
     >

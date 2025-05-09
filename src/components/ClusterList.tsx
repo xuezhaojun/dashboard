@@ -62,11 +62,10 @@ const ClusterList = () => {
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="bg-red-50 p-4 border border-red-200 rounded-md">
-          <p className="text-red-600">{error}</p>
+      <div>
+        <div>
+          <p>{error}</p>
           <button
-            className="mt-2 px-4 py-1 bg-red-100 text-red-800 rounded text-sm"
             onClick={() => window.location.reload()}
           >
             Retry
@@ -77,55 +76,44 @@ const ClusterList = () => {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Clusters</h1>
+    <div>
+      <h1>Clusters</h1>
 
       {loading ? (
-        <div className="text-center py-8">Loading...</div>
+        <div>Loading...</div>
       ) : clusters.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No clusters available</div>
+        <div>No clusters available</div>
       ) : (
-        <div className="overflow-x-auto bg-white shadow rounded-lg">
-          <table className="min-w-full">
-            <thead className="bg-gray-50">
+        <div>
+          <table>
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Version
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nodes
-                </th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Version</th>
+                <th>Nodes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {clusters.map((cluster, index) => (
-                <tr key={`${cluster.id}-${index}`} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr key={`${cluster.id}-${index}`}>
+                  <td>
                     <Link
                       to={`/clusters/${cluster.name}`}
-                      className="text-blue-600 hover:text-blue-900 font-medium"
                     >
                       {cluster.name}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center">
-                      <span className={`h-2.5 w-2.5 rounded-full mr-2 ${
-                        cluster.status === 'Online' ? 'bg-green-500' : 'bg-gray-400'
-                      }`}></span>
+                  <td>
+                    <span>
+                      <span></span>
                       {cluster.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                  <td>
                     {cluster.version || 'Unknown'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                  <td>
                     {cluster.nodes || 'Unknown'}
                   </td>
                 </tr>
