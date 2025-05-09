@@ -122,7 +122,7 @@ const Login = () => {
               />
 
               {/* Buttons */}
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <Button
                   type="submit"
                   variant="contained"
@@ -133,7 +133,6 @@ const Login = () => {
                       bgcolor: "#1a1b66",
                     },
                     textTransform: "none",
-                    mb: 2,
                   }}
                 >
                   Sign In
@@ -143,7 +142,7 @@ const Login = () => {
                   <Button
                     variant="outlined"
                     fullWidth
-                    sx={{ textTransform: "none", mt: 2 }}
+                    sx={{ textTransform: "none" }}
                     onClick={handleDevLogin}
                   >
                     Development Mode
