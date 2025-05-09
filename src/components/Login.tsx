@@ -3,7 +3,6 @@ import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Login = () => {
   const [token, setToken] = useState('');
@@ -38,77 +37,55 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-background">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h1 className="text-center text-3xl font-extrabold text-foreground">
-          OCM Dashboard
-        </h1>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card>
-          <CardHeader>
-            <CardTitle>Authentication</CardTitle>
-            <CardDescription>
-              Sign in with your bearer token to access the dashboard
+    <div className="min-h-screen flex flex-col justify-center items-center py-12 sm:px-6 lg:px-8 bg-background">
+      <div className="w-full max-w-md">
+        <Card className="shadow-xl border-0 rounded-xl">
+          <CardHeader className="flex flex-col items-center space-y-2 pb-2">
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary w-6 h-6">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              </svg>
+            </div>
+            <CardTitle className="text-2xl font-bold text-center">Sign in to OCM Dashboard</CardTitle>
+            <CardDescription className="text-center">
+              Paste your Kubernetes <span className="font-medium">Bearer Token</span> below
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="token" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="token">Bearer Token</TabsTrigger>
-                <TabsTrigger value="dev" disabled={!import.meta.env.DEV}>Development</TabsTrigger>
-              </TabsList>
-              <TabsContent value="token">
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                  <div className="space-y-2">
-                    <label htmlFor="token" className="text-sm font-medium">
-                      Bearer Token
-                    </label>
-                    <textarea
-                      id="token"
-                      name="token"
-                      rows={4}
-                      className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      value={token}
-                      onChange={(e) => setToken(e.target.value)}
-                      placeholder="Paste your bearer token here..."
-                    />
-                    {error && (
-                      <p className="text-sm font-medium text-destructive">{error}</p>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    The token will be stored locally in your browser and used to authenticate API requests.
-                  </p>
-                  <Button type="submit" className="w-full">
-                    Sign in
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="dev">
-                {import.meta.env.DEV && (
-                  <div className="flex flex-col space-y-4 py-4">
-                    <p className="text-sm text-muted-foreground">
-                      Development mode allows you to use the dashboard without providing a valid token.
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        login('development-mode-token');
-                        navigate('/clusters');
-                      }}
-                    >
-                      Continue without token (Dev Mode)
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+          <CardContent className="pt-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <textarea
+                id="token"
+                name="token"
+                rows={4}
+                className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="eyJhbGciOiJSUzI1NiIsImtpZCI6IkpXVCJ9..."
+              />
+              {error && (
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              )}
+              <Button type="submit" className="w-full font-medium">
+                Sign In
+              </Button>
+              {import.meta.env.DEV && (
+                <Button
+                  variant="outline"
+                  type="button"
+                  className="w-full mt-2"
+                  onClick={() => {
+                    login('development-mode-token');
+                    navigate('/clusters');
+                  }}
+                >
+                  Use Dev Token
+                </Button>
+              )}
+            </form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t pt-6">
+          <CardFooter className="flex justify-center pt-2 pb-6">
             <p className="text-xs text-muted-foreground">
-              OCM Dashboard © {new Date().getFullYear()}
+              Token is stored locally in your browser only.
             </p>
           </CardFooter>
         </Card>
