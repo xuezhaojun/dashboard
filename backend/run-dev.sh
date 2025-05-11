@@ -16,9 +16,14 @@ echo -e "${YELLOW}Environment variables set:${NC}"
 echo "DASHBOARD_DEBUG=true       - Enable debug logging"
 echo "DASHBOARD_BYPASS_AUTH=true - Skip authentication checks"
 echo "DASHBOARD_USE_MOCK=true    - Use mock data instead of real clusters"
+echo -e ""
 
-echo -e "\n${GREEN}Starting backend service...${NC}"
+# Get the script's directory and change to it
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+
+echo -e "${GREEN}Starting backend service...${NC}"
 echo "API will be available at http://localhost:8080"
 
-# Allow passing additional arguments
+# Run from the backend directory
 go run main.go $@

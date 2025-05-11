@@ -76,75 +76,86 @@ type Cluster struct {
 }
 
 func main() {
-	// Get kubeconfig
-	var kubeconfig *string
+	// Check if using mock data
+	useMockData := os.Getenv("DASHBOARD_USE_MOCK") == "true"
+	debugMode := os.Getenv("DASHBOARD_DEBUG") == "true"
 
-	// Check if running in-cluster
-	_, err := rest.InClusterConfig()
-	inCluster := err == nil
+	var dynamicClient dynamic.Interface
 
-	if !inCluster {
-		if home := homedir.HomeDir(); home != "" {
-			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-		} else {
-			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-		}
-		flag.Parse()
-	}
+	// Only create the Kubernetes client if not using mock data
+	if !useMockData {
+		// Get kubeconfig
+		var kubeconfig *string
 
-	// Create kubernetes client
-	var config *rest.Config
-	if inCluster {
-		// creates the in-cluster config
-		config, err = rest.InClusterConfig()
-		if err != nil {
-			log.Fatalf("Error creating in-cluster config: %v", err)
-		}
-		log.Println("Using in-cluster configuration")
-	} else {
-		// First try to use the KUBECONFIG environment variable
-		kubeconfigEnv := os.Getenv("KUBECONFIG")
-		if kubeconfigEnv != "" {
-			log.Printf("Using KUBECONFIG from environment: %s", kubeconfigEnv)
-			config, err = clientcmd.BuildConfigFromFlags("", kubeconfigEnv)
-			if err != nil {
-				log.Printf("Error building kubeconfig from KUBECONFIG env: %v", err)
-				// Fall back to command line flag or default
+		// Check if running in-cluster
+		_, inClusterErr := rest.InClusterConfig()
+		inCluster := inClusterErr == nil
+
+		if !inCluster {
+			if home := homedir.HomeDir(); home != "" {
+				kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+			} else {
+				kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 			}
+			flag.Parse()
 		}
 
-		// If KUBECONFIG env var didn't work, try the flag or default path
-		if config == nil {
-			log.Printf("Using kubeconfig from flag or default: %s", *kubeconfig)
-			config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		// Create kubernetes client
+		var config *rest.Config
+		var err error
+		if inCluster {
+			// creates the in-cluster config
+			config, err = rest.InClusterConfig()
 			if err != nil {
-				// Try the load rules (will check multiple locations)
-				log.Printf("Trying default client config loading rules")
-				loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-				configOverrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmdapi.Cluster{Server: ""}}
-				kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-				config, err = kubeConfig.ClientConfig()
+				log.Fatalf("Error creating in-cluster config: %v", err)
+			}
+			log.Println("Using in-cluster configuration")
+		} else {
+			// First try to use the KUBECONFIG environment variable
+			kubeconfigEnv := os.Getenv("KUBECONFIG")
+			if kubeconfigEnv != "" {
+				log.Printf("Using KUBECONFIG from environment: %s", kubeconfigEnv)
+				config, err = clientcmd.BuildConfigFromFlags("", kubeconfigEnv)
 				if err != nil {
-					log.Fatalf("Error building kubeconfig using defaults: %v", err)
+					log.Printf("Error building kubeconfig from KUBECONFIG env: %v", err)
+					// Fall back to command line flag or default
+				}
+			}
+
+			// If KUBECONFIG env var didn't work, try the flag or default path
+			if config == nil {
+				log.Printf("Using kubeconfig from flag or default: %s", *kubeconfig)
+				config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+				if err != nil {
+					// Try the load rules (will check multiple locations)
+					log.Printf("Trying default client config loading rules")
+					loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+					configOverrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmdapi.Cluster{Server: ""}}
+					kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+					config, err = kubeConfig.ClientConfig()
+					if err != nil {
+						log.Fatalf("Error building kubeconfig using defaults: %v", err)
+					}
 				}
 			}
 		}
-	}
 
-	// Create dynamic client
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("Error creating dynamic client: %v", err)
-	}
+		// Create dynamic client
+		dynamicClient, err = dynamic.NewForConfig(config)
+		if err != nil {
+			log.Fatalf("Error creating dynamic client: %v", err)
+		}
 
-	// Debug message to verify connection
-	log.Println("Successfully created Kubernetes client")
+		// Debug message to verify connection
+		log.Println("Successfully created Kubernetes client")
+	} else if debugMode {
+		log.Println("Mock mode enabled, skipping Kubernetes client creation")
+	}
 
 	// Create a context
 	ctx := context.Background()
 
 	// Check if debug mode is enabled
-	debugMode := os.Getenv("DASHBOARD_DEBUG") == "true"
 	if debugMode {
 		log.Println("Debug mode enabled")
 	}
@@ -240,6 +251,12 @@ func main() {
 					},
 				}
 				c.JSON(http.StatusOK, mockClusters)
+				return
+			}
+
+			// Ensure we have a client before proceeding
+			if dynamicClient == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not initialized"})
 				return
 			}
 
@@ -474,6 +491,12 @@ func main() {
 					c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Mock cluster %s not found", name)})
 					return
 				}
+			}
+
+			// Ensure we have a client before proceeding
+			if dynamicClient == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not initialized"})
+				return
 			}
 
 			// Get the real cluster
