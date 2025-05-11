@@ -6,7 +6,7 @@ import Login from './components/Login';
 import AppShell from './components/layout/AppShell';
 import PlaceholderPage from './components/PlaceholderPage';
 import OverviewPage from './components/OverviewPage';
-import ClusterListPage from './components/ClusterListPage';
+import ClusterList from './components/ClusterList';
 import { MuiThemeProvider } from './theme/ThemeProvider';
 
 // Protected route component that redirects to login if not authenticated
@@ -31,7 +31,7 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={<Login />} />
 
-        {/* 将 AppShell 作为所有受保护路由的父级布局 */}
+        {/* Use AppShell as the parent layout for all protected routes */}
         <Route
           path="/"
           element={
@@ -40,9 +40,9 @@ function AppContent() {
             </ProtectedRoute>
           }
         >
-          {/* 子路由将在 AppShell 的 <Outlet /> 位置渲染 */}
+          {/* Child routes will be rendered at <Outlet /> in AppShell */}
           <Route path="overview" element={<OverviewPage />} />
-          <Route path="clusters" element={<ClusterListPage />} />
+          <Route path="clusters" element={<ClusterList />} />
           <Route path="clusters/:name" element={<ClusterDetail />} />
           <Route path="placements" element={<PlaceholderPage title="Placements" />} />
           <Route path="policies" element={<PlaceholderPage title="Policies" />} />

@@ -61,6 +61,17 @@ const ClusterDetail = () => {
     );
   }
 
+  // Get readable status from conditions
+  const getHubAcceptedStatus = () => {
+    if (cluster?.hubAccepted) return 'Accepted';
+    return 'Not Accepted';
+  };
+
+  const getJoinedStatus = () => {
+    const joinedCondition = cluster?.conditions?.find(c => c.type === 'ManagedClusterJoined');
+    return joinedCondition?.status === 'True' ? 'Joined' : 'Not Joined';
+  };
+
   return (
     <div>
       <div>
@@ -98,9 +109,71 @@ const ClusterDetail = () => {
                     <td>Nodes</td>
                     <td>{cluster.nodes || 'Unknown'}</td>
                   </tr>
+                  <tr>
+                    <td>Hub Accepted</td>
+                    <td>{getHubAcceptedStatus()}</td>
+                  </tr>
+                  <tr>
+                    <td>Joined</td>
+                    <td>{getJoinedStatus()}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
+
+            {/* Resource Capacity & Allocatable */}
+            {(cluster.capacity || cluster.allocatable) && (
+              <div>
+                <h2>Cluster Resources</h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Resource</th>
+                      <th>Capacity</th>
+                      <th>Allocatable</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* CPU Resources */}
+                    <tr>
+                      <td>CPU</td>
+                      <td>{cluster.capacity?.cpu || '-'}</td>
+                      <td>{cluster.allocatable?.cpu || '-'}</td>
+                    </tr>
+                    {/* Memory Resources */}
+                    <tr>
+                      <td>Memory</td>
+                      <td>{cluster.capacity?.memory || '-'}</td>
+                      <td>{cluster.allocatable?.memory || '-'}</td>
+                    </tr>
+                    {/* Add any other resources that might be present */}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Cluster Claims */}
+            {cluster.clusterClaims && cluster.clusterClaims.length > 0 && (
+              <div>
+                <h2>Cluster Claims</h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cluster.clusterClaims.map((claim, index) => (
+                      <tr key={index}>
+                        <td>{claim.name}</td>
+                        <td>{claim.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {cluster.labels && Object.keys(cluster.labels).length > 0 && (
               <div>
@@ -119,6 +192,31 @@ const ClusterDetail = () => {
             )}
           </div>
 
+          {/* Taints */}
+          {cluster.taints && cluster.taints.length > 0 && (
+            <div>
+              <h2>Taints</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Effect</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cluster.taints.map((taint, index) => (
+                    <tr key={index}>
+                      <td>{taint.key}</td>
+                      <td>{taint.value || '-'}</td>
+                      <td>{taint.effect}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           {cluster.conditions && cluster.conditions.length > 0 && (
             <div>
               <h2>Conditions</h2>
@@ -129,6 +227,7 @@ const ClusterDetail = () => {
                       <th>Type</th>
                       <th>Status</th>
                       <th>Reason</th>
+                      <th>Message</th>
                       <th>Last Transition</th>
                     </tr>
                   </thead>
@@ -142,6 +241,7 @@ const ClusterDetail = () => {
                           </span>
                         </td>
                         <td>{condition.reason || '-'}</td>
+                        <td>{condition.message || '-'}</td>
                         <td>{condition.lastTransitionTime || '-'}</td>
                       </tr>
                     ))}

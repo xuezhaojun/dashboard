@@ -39,6 +39,19 @@ type Condition struct {
 	Message            string `json:"message,omitempty"`
 }
 
+// ClusterClaim represents a claim from the managed cluster
+type ClusterClaim struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// Taint represents a taint on the managed cluster
+type Taint struct {
+	Key    string `json:"key"`
+	Value  string `json:"value,omitempty"`
+	Effect string `json:"effect"`
+}
+
 // ClusterStatus represents a simplified cluster status
 type ClusterStatus struct {
 	Available  bool        `json:"available"`
@@ -48,13 +61,18 @@ type ClusterStatus struct {
 
 // Cluster represents a simplified OCM ManagedCluster
 type Cluster struct {
-	ID         string            `json:"id"`
-	Name       string            `json:"name"`
-	Status     string            `json:"status"` // "Online", "Offline", etc.
-	Version    string            `json:"version,omitempty"`
-	Nodes      int               `json:"nodes,omitempty"`
-	Labels     map[string]string `json:"labels,omitempty"`
-	Conditions []Condition       `json:"conditions,omitempty"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Status        string            `json:"status"` // "Online", "Offline", etc.
+	Version       string            `json:"version,omitempty"`
+	Nodes         int               `json:"nodes,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty"`
+	Conditions    []Condition       `json:"conditions,omitempty"`
+	HubAccepted   bool              `json:"hubAccepted"`
+	Capacity      map[string]string `json:"capacity,omitempty"`
+	Allocatable   map[string]string `json:"allocatable,omitempty"`
+	ClusterClaims []ClusterClaim    `json:"clusterClaims,omitempty"`
+	Taints        []Taint           `json:"taints,omitempty"`
 }
 
 func main() {
@@ -246,14 +264,55 @@ func main() {
 					Labels: item.GetLabels(),
 				}
 
-				// Extract version from labels or annotations
-				if version, ok := item.GetLabels()["version"]; ok {
-					cluster.Version = version
-				}
-
-				// Extract status
+				// Extract version from status field
 				status, found, err := unstructured.NestedMap(item.Object, "status")
 				if err == nil && found {
+					// Extract kubernetes version
+					if version, found, _ := unstructured.NestedMap(status, "version"); found {
+						if k8sVersion, found, _ := unstructured.NestedString(version, "kubernetes"); found {
+							cluster.Version = k8sVersion
+						}
+					}
+
+					// Extract capacity
+					if capacity, found, _ := unstructured.NestedMap(status, "capacity"); found {
+						resourceMap := make(map[string]string)
+						for k, v := range capacity {
+							resourceMap[k] = fmt.Sprintf("%v", v)
+						}
+						cluster.Capacity = resourceMap
+					}
+
+					// Extract allocatable
+					if allocatable, found, _ := unstructured.NestedMap(status, "allocatable"); found {
+						resourceMap := make(map[string]string)
+						for k, v := range allocatable {
+							resourceMap[k] = fmt.Sprintf("%v", v)
+						}
+						cluster.Allocatable = resourceMap
+					}
+
+					// Extract clusterClaims
+					if clusterClaims, found, _ := unstructured.NestedSlice(status, "clusterClaims"); found {
+						claims := make([]ClusterClaim, 0, len(clusterClaims))
+						for _, c := range clusterClaims {
+							claimMap, ok := c.(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							claim := ClusterClaim{}
+							if name, found, _ := unstructured.NestedString(claimMap, "name"); found {
+								claim.Name = name
+							}
+							if value, found, _ := unstructured.NestedString(claimMap, "value"); found {
+								claim.Value = value
+							}
+							claims = append(claims, claim)
+						}
+						cluster.ClusterClaims = claims
+					}
+
 					// Convert conditions
 					if conditions, found, _ := unstructured.NestedSlice(status, "conditions"); found {
 						for _, c := range conditions {
@@ -292,7 +351,45 @@ func main() {
 							} else if condition.Type == "ManagedClusterConditionAvailable" && condition.Status != "True" {
 								cluster.Status = "Offline"
 							}
+
+							// Check for hub acceptance
+							if condition.Type == "HubAcceptedManagedCluster" && condition.Status == "True" {
+								cluster.HubAccepted = true
+							}
 						}
+					}
+				}
+
+				// Extract spec for additional details
+				spec, found, err := unstructured.NestedMap(item.Object, "spec")
+				if err == nil && found {
+					// Extract hubAcceptsClient
+					if hubAccepts, found, _ := unstructured.NestedBool(spec, "hubAcceptsClient"); found {
+						cluster.HubAccepted = hubAccepts
+					}
+
+					// Extract taints
+					if taints, found, _ := unstructured.NestedSlice(spec, "taints"); found {
+						clusterTaints := make([]Taint, 0, len(taints))
+						for _, t := range taints {
+							taintMap, ok := t.(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							taint := Taint{}
+							if key, found, _ := unstructured.NestedString(taintMap, "key"); found {
+								taint.Key = key
+							}
+							if value, found, _ := unstructured.NestedString(taintMap, "value"); found {
+								taint.Value = value
+							}
+							if effect, found, _ := unstructured.NestedString(taintMap, "effect"); found {
+								taint.Effect = effect
+							}
+							clusterTaints = append(clusterTaints, taint)
+						}
+						cluster.Taints = clusterTaints
 					}
 				}
 
@@ -397,14 +494,55 @@ func main() {
 				Labels: item.GetLabels(),
 			}
 
-			// Extract version from labels or annotations
-			if version, ok := item.GetLabels()["version"]; ok {
-				cluster.Version = version
-			}
-
-			// Extract status
+			// Extract version from status field
 			status, found, err := unstructured.NestedMap(item.Object, "status")
 			if err == nil && found {
+				// Extract kubernetes version
+				if version, found, _ := unstructured.NestedMap(status, "version"); found {
+					if k8sVersion, found, _ := unstructured.NestedString(version, "kubernetes"); found {
+						cluster.Version = k8sVersion
+					}
+				}
+
+				// Extract capacity
+				if capacity, found, _ := unstructured.NestedMap(status, "capacity"); found {
+					resourceMap := make(map[string]string)
+					for k, v := range capacity {
+						resourceMap[k] = fmt.Sprintf("%v", v)
+					}
+					cluster.Capacity = resourceMap
+				}
+
+				// Extract allocatable
+				if allocatable, found, _ := unstructured.NestedMap(status, "allocatable"); found {
+					resourceMap := make(map[string]string)
+					for k, v := range allocatable {
+						resourceMap[k] = fmt.Sprintf("%v", v)
+					}
+					cluster.Allocatable = resourceMap
+				}
+
+				// Extract clusterClaims
+				if clusterClaims, found, _ := unstructured.NestedSlice(status, "clusterClaims"); found {
+					claims := make([]ClusterClaim, 0, len(clusterClaims))
+					for _, c := range clusterClaims {
+						claimMap, ok := c.(map[string]interface{})
+						if !ok {
+							continue
+						}
+
+						claim := ClusterClaim{}
+						if name, found, _ := unstructured.NestedString(claimMap, "name"); found {
+							claim.Name = name
+						}
+						if value, found, _ := unstructured.NestedString(claimMap, "value"); found {
+							claim.Value = value
+						}
+						claims = append(claims, claim)
+					}
+					cluster.ClusterClaims = claims
+				}
+
 				// Convert conditions
 				if conditions, found, _ := unstructured.NestedSlice(status, "conditions"); found {
 					for _, c := range conditions {
@@ -443,7 +581,45 @@ func main() {
 						} else if condition.Type == "ManagedClusterConditionAvailable" && condition.Status != "True" {
 							cluster.Status = "Offline"
 						}
+
+						// Check for hub acceptance
+						if condition.Type == "HubAcceptedManagedCluster" && condition.Status == "True" {
+							cluster.HubAccepted = true
+						}
 					}
+				}
+			}
+
+			// Extract spec for additional details
+			spec, found, err := unstructured.NestedMap(item.Object, "spec")
+			if err == nil && found {
+				// Extract hubAcceptsClient
+				if hubAccepts, found, _ := unstructured.NestedBool(spec, "hubAcceptsClient"); found {
+					cluster.HubAccepted = hubAccepts
+				}
+
+				// Extract taints
+				if taints, found, _ := unstructured.NestedSlice(spec, "taints"); found {
+					clusterTaints := make([]Taint, 0, len(taints))
+					for _, t := range taints {
+						taintMap, ok := t.(map[string]interface{})
+						if !ok {
+							continue
+						}
+
+						taint := Taint{}
+						if key, found, _ := unstructured.NestedString(taintMap, "key"); found {
+							taint.Key = key
+						}
+						if value, found, _ := unstructured.NestedString(taintMap, "value"); found {
+							taint.Value = value
+						}
+						if effect, found, _ := unstructured.NestedString(taintMap, "effect"); found {
+							taint.Effect = effect
+						}
+						clusterTaints = append(clusterTaints, taint)
+					}
+					cluster.Taints = clusterTaints
 				}
 			}
 

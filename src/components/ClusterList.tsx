@@ -41,99 +41,12 @@ import {
   Download as DownloadIcon,
 } from "@mui/icons-material";
 import { fetchClusters } from '../api/clusterService';
+import type { Cluster } from '../api/clusterService';
 
-// 模拟集群数据
-const clusters = [
-  {
-    id: "cluster-1",
-    name: "production-us-west",
-    status: "healthy",
-    region: "us-west-2",
-    nodes: 12,
-    version: "1.26.5",
-    type: "production",
-    lastUpdated: "2023-05-15T10:30:00Z",
-  },
-  {
-    id: "cluster-2",
-    name: "production-us-east",
-    status: "warning",
-    region: "us-east-1",
-    nodes: 8,
-    version: "1.26.5",
-    type: "production",
-    lastUpdated: "2023-05-14T08:45:00Z",
-  },
-  {
-    id: "cluster-3",
-    name: "staging-eu-west",
-    status: "healthy",
-    region: "eu-west-1",
-    nodes: 6,
-    version: "1.25.9",
-    type: "staging",
-    lastUpdated: "2023-05-13T14:20:00Z",
-  },
-  {
-    id: "cluster-4",
-    name: "development-ap-south",
-    status: "critical",
-    region: "ap-south-1",
-    nodes: 4,
-    version: "1.25.9",
-    type: "development",
-    lastUpdated: "2023-05-12T09:15:00Z",
-  },
-  {
-    id: "cluster-5",
-    name: "production-eu-central",
-    status: "healthy",
-    region: "eu-central-1",
-    nodes: 10,
-    version: "1.26.5",
-    type: "production",
-    lastUpdated: "2023-05-11T16:40:00Z",
-  },
-  {
-    id: "cluster-6",
-    name: "staging-us-west",
-    status: "warning",
-    region: "us-west-2",
-    nodes: 5,
-    version: "1.25.9",
-    type: "staging",
-    lastUpdated: "2023-05-10T11:25:00Z",
-  },
-  {
-    id: "cluster-7",
-    name: "development-us-east",
-    status: "healthy",
-    region: "us-east-1",
-    nodes: 3,
-    version: "1.24.12",
-    type: "development",
-    lastUpdated: "2023-05-09T13:50:00Z",
-  },
-];
-
-// 模拟节点数据
-const nodes = [
-  { id: "node-1", name: "ip-10-0-1-101", status: "ready", role: "master", cpu: "4 cores", memory: "16 GiB" },
-  { id: "node-2", name: "ip-10-0-1-102", status: "ready", role: "worker", cpu: "8 cores", memory: "32 GiB" },
-  { id: "node-3", name: "ip-10-0-1-103", status: "ready", role: "worker", cpu: "8 cores", memory: "32 GiB" },
-  { id: "node-4", name: "ip-10-0-1-104", status: "not-ready", role: "worker", cpu: "8 cores", memory: "32 GiB" },
-  { id: "node-5", name: "ip-10-0-1-105", status: "ready", role: "worker", cpu: "8 cores", memory: "32 GiB" },
-];
-
-// 模拟命名空间数据
-const namespaces = [
-  { id: "ns-1", name: "default", status: "active", pods: 5, services: 3 },
-  { id: "ns-2", name: "kube-system", status: "active", pods: 12, services: 8 },
-  { id: "ns-3", name: "monitoring", status: "active", pods: 8, services: 4 },
-  { id: "ns-4", name: "logging", status: "active", pods: 6, services: 2 },
-  { id: "ns-5", name: "app-frontend", status: "active", pods: 3, services: 1 },
-  { id: "ns-6", name: "app-backend", status: "active", pods: 4, services: 2 },
-];
+// Gets the Hub Accepted status of a cluster
+const getHubAcceptedStatus = (cluster: Cluster) => {
+  return cluster.hubAccepted ? 'Accepted' : 'Not Accepted';
+};
 
 const ClusterList = () => {
   const theme = useTheme();
@@ -142,13 +55,19 @@ const ClusterList = () => {
   const [filterRegion, setFilterRegion] = useState("all");
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState(0);
+  const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadClusters = async () => {
       try {
-        await fetchClusters();
+        setLoading(true);
+        const clusterData = await fetchClusters();
+        setClusters(clusterData);
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching clusters:', error);
+        setLoading(false);
       }
     };
 
@@ -179,24 +98,17 @@ const ClusterList = () => {
     setDetailTab(newValue);
   };
 
-  // 过滤集群
-  const filteredClusters = clusters.filter((cluster) => {
-    const matchesSearch = cluster.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === "all" || cluster.type === filterType;
-    const matchesRegion = filterRegion === "all" || cluster.region === filterRegion;
-    return matchesSearch && matchesType && matchesRegion;
-  });
-
-  // 获取选中的集群
+  // Get the selected cluster
   const selectedClusterData = clusters.find((cluster) => cluster.id === selectedCluster);
 
-  // 格式化日期
-  const formatDate = (dateString: string) => {
+  // Format date string
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
 
-  // 获取状态图标
+  // Get status icon
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "healthy":
@@ -210,7 +122,7 @@ const ClusterList = () => {
     }
   };
 
-  // 获取状态文本
+  // Get status text
   const getStatusText = (status: string) => {
     switch (status) {
       case "healthy":
@@ -226,7 +138,7 @@ const ClusterList = () => {
 
   return (
     <Box sx={{ display: "flex", height: "calc(100vh - 64px)" }}>
-      {/* 集群列表 */}
+      {/* Cluster list */}
       <Box
         sx={{
           flex: selectedCluster ? "0 0 60%" : "1 1 auto",
@@ -248,7 +160,7 @@ const ClusterList = () => {
           </Button>
         </Box>
 
-        {/* 过滤器和搜索 */}
+        {/* Filters and search */}
         <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid size={{ xs: 12, md: 4 }}>
@@ -312,74 +224,82 @@ const ClusterList = () => {
           </Grid>
         </Paper>
 
-        {/* 集群列表 */}
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-          <Table sx={{ minWidth: 650 }}>
-            <TableHead>
+        {/* Cluster list */}
+        <TableContainer component={Paper} sx={{ mt: 3 }}>
+          <Table>
+            <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
               <TableRow>
-                <TableCell>Status</TableCell>
                 <TableCell>Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Region</TableCell>
-                <TableCell>Nodes</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Hub Accepted</TableCell>
                 <TableCell>Version</TableCell>
-                <TableCell>Last Updated</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell>Region</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredClusters.map((cluster) => (
-                <TableRow
-                  key={cluster.id}
-                  hover
-                  onClick={() => handleClusterSelect(cluster.id)}
-                  sx={{ cursor: "pointer", "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell>
-                    <Tooltip title={getStatusText(cluster.status)}>
-                      <Box>{getStatusIcon(cluster.status)}</Box>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell component="th" scope="row">
-                    {cluster.name}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={cluster.type}
-                      size="small"
-                      sx={{
-                        bgcolor:
-                          cluster.type === "production"
-                            ? alpha(theme.palette.primary.main, 0.1)
-                            : cluster.type === "staging"
-                              ? alpha(theme.palette.warning.main, 0.1)
-                              : alpha(theme.palette.info.main, 0.1),
-                        color:
-                          cluster.type === "production"
-                            ? "primary.main"
-                            : cluster.type === "staging"
-                              ? "warning.main"
-                              : "info.main",
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>{cluster.region}</TableCell>
-                  <TableCell>{cluster.nodes}</TableCell>
-                  <TableCell>{cluster.version}</TableCell>
-                  <TableCell>{formatDate(cluster.lastUpdated)}</TableCell>
-                  <TableCell align="right">
-                    <IconButton size="small" onClick={(e) => e.stopPropagation()}>
-                      <MoreVertIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">Loading clusters...</TableCell>
                 </TableRow>
-              ))}
+              ) : clusters.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">No clusters found</TableCell>
+                </TableRow>
+              ) : (
+                clusters.map((cluster) => (
+                  <TableRow
+                    key={cluster.id}
+                    onClick={() => handleClusterSelect(cluster.id)}
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.05) },
+                      bgcolor: selectedCluster === cluster.id ? alpha(theme.palette.primary.main, 0.1) : "inherit"
+                    }}
+                  >
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        {getStatusIcon(cluster.status)}
+                        <Typography sx={{ ml: 1, fontWeight: "medium" }}>
+                          {cluster.name}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={cluster.status}
+                        size="small"
+                        color={
+                          cluster.status === "Online" ? "success" :
+                          cluster.status === "Offline" ? "error" : "default"
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getHubAcceptedStatus(cluster)}
+                        size="small"
+                        color={cluster.hubAccepted ? "success" : "default"}
+                      />
+                    </TableCell>
+                    <TableCell>{cluster.version || "Unknown"}</TableCell>
+                    <TableCell>
+                      {cluster.labels?.region || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton size="small">
+                        <MoreVertIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       </Box>
 
-      {/* 详情抽屉 */}
+      {/* Detail drawer */}
       {selectedCluster && selectedClusterData && (
         <Box
           sx={{
@@ -422,14 +342,14 @@ const ClusterList = () => {
                   Type
                 </Typography>
                 <Typography variant="body1" sx={{ textTransform: "capitalize" }}>
-                  {selectedClusterData.type}
+                  {selectedClusterData.labels?.env || "N/A"}
                 </Typography>
               </Grid>
               <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   Region
                 </Typography>
-                <Typography variant="body1">{selectedClusterData.region}</Typography>
+                <Typography variant="body1">{selectedClusterData.labels?.region || "N/A"}</Typography>
               </Grid>
               <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
@@ -447,7 +367,9 @@ const ClusterList = () => {
                 <Typography variant="body2" color="text.secondary">
                   Last Updated
                 </Typography>
-                <Typography variant="body1">{formatDate(selectedClusterData.lastUpdated)}</Typography>
+                <Typography variant="body1">
+                  {formatDate(selectedClusterData.conditions?.[0]?.lastTransitionTime)}
+                </Typography>
               </Grid>
             </Grid>
           </Box>
@@ -477,7 +399,7 @@ const ClusterList = () => {
               </Tabs>
             </Box>
 
-            {/* 节点选项卡 */}
+            {/* Node tab */}
             {detailTab === 0 && (
               <Box sx={{ mt: 2 }}>
                 <TableContainer>
@@ -492,34 +414,16 @@ const ClusterList = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {nodes.map((node) => (
-                        <TableRow key={node.id}>
-                          <TableCell>{node.name}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={node.status}
-                              size="small"
-                              sx={{
-                                bgcolor:
-                                  node.status === "ready"
-                                    ? alpha(theme.palette.success.main, 0.1)
-                                    : alpha(theme.palette.error.main, 0.1),
-                                color: node.status === "ready" ? "success.main" : "error.main",
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>{node.role}</TableCell>
-                          <TableCell>{node.cpu}</TableCell>
-                          <TableCell>{node.memory}</TableCell>
-                        </TableRow>
-                      ))}
+                      <TableRow>
+                        <TableCell colSpan={5} align="center">Node data not available</TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </TableContainer>
               </Box>
             )}
 
-            {/* 命名空间选项卡 */}
+            {/* Namespace tab */}
             {detailTab === 1 && (
               <Box sx={{ mt: 2 }}>
                 <TableContainer>
@@ -533,42 +437,20 @@ const ClusterList = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {namespaces.map((namespace) => (
-                        <TableRow key={namespace.id}>
-                          <TableCell>{namespace.name}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={namespace.status}
-                              size="small"
-                              sx={{
-                                bgcolor: alpha(theme.palette.success.main, 0.1),
-                                color: "success.main",
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>{namespace.pods}</TableCell>
-                          <TableCell>{namespace.services}</TableCell>
-                        </TableRow>
-                      ))}
+                      <TableRow>
+                        <TableCell colSpan={4} align="center">Namespace data not available</TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </TableContainer>
               </Box>
             )}
 
-            {/* 事件选项卡 */}
+            {/* Events tab */}
             {detailTab === 2 && (
               <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), borderRadius: 1 }}>
-                <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
-                  2023-05-15T10:30:00Z - System - ClusterHealthCheck - Cluster health check completed successfully
-                  <br />
-                  2023-05-15T10:15:00Z - System - NodeAdded - New node added to the cluster
-                  <br />
-                  2023-05-15T09:45:00Z - Warning - MemoryPressure - Node ip-10-0-1-104 is under memory pressure
-                  <br />
-                  2023-05-15T09:30:00Z - System - DeploymentScaled - Deployment frontend scaled to 3 replicas
-                  <br />
-                  2023-05-15T09:00:00Z - System - KubernetesUpgrade - Kubernetes upgraded to version 1.26.5
+                <Typography variant="body2" sx={{ fontFamily: "monospace", textAlign: "center" }}>
+                  No event data available
                 </Typography>
               </Box>
             )}
