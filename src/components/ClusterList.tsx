@@ -29,9 +29,7 @@ import {
 import type { SelectChangeEvent } from "@mui/material";
 import {
   Search as SearchIcon,
-  FilterList as FilterListIcon,
   Refresh as RefreshIcon,
-  Add as AddIcon,
   ChevronLeft as ChevronLeftIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
@@ -51,8 +49,7 @@ const getHubAcceptedStatus = (cluster: Cluster) => {
 const ClusterList = () => {
   const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterRegion, setFilterRegion] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState(0);
   const [clusters, setClusters] = useState<Cluster[]>([]);
@@ -78,12 +75,8 @@ const ClusterList = () => {
     setSearchTerm(event.target.value);
   };
 
-  const handleFilterTypeChange = (event: SelectChangeEvent) => {
-    setFilterType(event.target.value);
-  };
-
-  const handleFilterRegionChange = (event: SelectChangeEvent) => {
-    setFilterRegion(event.target.value);
+  const handleFilterStatusChange = (event: SelectChangeEvent) => {
+    setFilterStatus(event.target.value);
   };
 
   const handleClusterSelect = (clusterId: string) => {
@@ -147,17 +140,6 @@ const ClusterList = () => {
           overflow: "auto",
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-            Clusters
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-          >
-            Add Cluster
-          </Button>
-        </Box>
 
         {/* Filters and search */}
         <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
@@ -179,32 +161,14 @@ const ClusterList = () => {
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth size="small">
-                <InputLabel id="filter-type-label">Type</InputLabel>
-                <Select labelId="filter-type-label" value={filterType} label="Type" onChange={handleFilterTypeChange}>
-                  <MenuItem value="all">All Types</MenuItem>
-                  <MenuItem value="production">Production</MenuItem>
-                  <MenuItem value="staging">Staging</MenuItem>
-                  <MenuItem value="development">Development</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel id="filter-region-label">Region</InputLabel>
-                <Select
-                  labelId="filter-region-label"
-                  value={filterRegion}
-                  label="Region"
-                  onChange={handleFilterRegionChange}
-                >
-                  <MenuItem value="all">All Regions</MenuItem>
-                  <MenuItem value="us-west-2">US West (Oregon)</MenuItem>
-                  <MenuItem value="us-east-1">US East (N. Virginia)</MenuItem>
-                  <MenuItem value="eu-west-1">EU West (Ireland)</MenuItem>
-                  <MenuItem value="eu-central-1">EU Central (Frankfurt)</MenuItem>
-                  <MenuItem value="ap-south-1">Asia Pacific (Mumbai)</MenuItem>
+                <InputLabel id="filter-status-label">Status</InputLabel>
+                <Select labelId="filter-status-label" value={filterStatus} label="Status" onChange={handleFilterStatusChange}>
+                  <MenuItem value="all">All Status</MenuItem>
+                  <MenuItem value="Online">Online</MenuItem>
+                  <MenuItem value="Offline">Offline</MenuItem>
+                  <MenuItem value="Warning">Warning</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -212,11 +176,6 @@ const ClusterList = () => {
               <Tooltip title="Refresh">
                 <IconButton>
                   <RefreshIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="More filters">
-                <IconButton>
-                  <FilterListIcon />
                 </IconButton>
               </Tooltip>
             </Grid>
