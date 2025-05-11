@@ -1,3 +1,9 @@
+/**
+ * @deprecated This component is deprecated and will be removed in a future version.
+ * Please use the new ClusterDetailPage component instead.
+ */
+
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchClusterByName } from '../api/clusterService';

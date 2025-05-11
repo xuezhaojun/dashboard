@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNaviate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -42,7 +41,6 @@ import {
   Download as DownloadIcon,
 } from "@mui/icons-material";
 import { fetchClusters } from '../api/clusterService';
-import type { Cluster } from '../api/clusterService';
 
 // 模拟集群数据
 const clusters = [
@@ -253,7 +251,7 @@ const ClusterList = () => {
         {/* 过滤器和搜索 */}
         <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 fullWidth
                 placeholder="Search clusters..."
@@ -270,7 +268,7 @@ const ClusterList = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <FormControl fullWidth size="small">
                 <InputLabel id="filter-type-label">Type</InputLabel>
                 <Select labelId="filter-type-label" value={filterType} label="Type" onChange={handleFilterTypeChange}>
@@ -281,7 +279,7 @@ const ClusterList = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <FormControl fullWidth size="small">
                 <InputLabel id="filter-region-label">Region</InputLabel>
                 <Select
@@ -299,7 +297,7 @@ const ClusterList = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2} sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Grid size={{ xs: 12, md: 2 }} sx={{ display: "flex", justifyContent: "flex-end" }}>
               <Tooltip title="Refresh">
                 <IconButton>
                   <RefreshIcon />
@@ -407,19 +405,19 @@ const ClusterList = () => {
 
           <Box sx={{ mb: 3 }}>
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   Cluster ID
                 </Typography>
                 <Typography variant="body1">{selectedClusterData.id}</Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   Status
                 </Typography>
                 <Typography variant="body1">{getStatusText(selectedClusterData.status)}</Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   Type
                 </Typography>
@@ -427,25 +425,25 @@ const ClusterList = () => {
                   {selectedClusterData.type}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   Region
                 </Typography>
                 <Typography variant="body1">{selectedClusterData.region}</Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   Nodes
                 </Typography>
                 <Typography variant="body1">{selectedClusterData.nodes}</Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   Kubernetes Version
                 </Typography>
                 <Typography variant="body1">{selectedClusterData.version}</Typography>
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Typography variant="body2" color="text.secondary">
                   Last Updated
                 </Typography>
