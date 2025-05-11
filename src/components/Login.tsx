@@ -86,7 +86,7 @@ const Login = () => {
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 {/* Title */}
                 <Typography variant="h5" component="h1" fontWeight="bold">
-                  Sign in to OCM Dashboard
+                  OCM Dashboard
                 </Typography>
               </Box>
             }
@@ -128,10 +128,6 @@ const Login = () => {
                   variant="contained"
                   fullWidth
                   sx={{
-                    bgcolor: "#0e0f45",
-                    "&:hover": {
-                      bgcolor: "#1a1b66",
-                    },
                     textTransform: "none",
                   }}
                 >

@@ -64,7 +64,7 @@ export default function AppBar({ open, drawerWidth, onDrawerToggle }: AppBarProp
   };
 
   return (
-    <AppBarStyled position="fixed" open={open} drawerWidth={drawerWidth} sx={{ backgroundColor: "#4f46e5" }}>
+    <AppBarStyled position="fixed" open={open} drawerWidth={drawerWidth}>
       <Toolbar>
         <IconButton
           color="inherit"

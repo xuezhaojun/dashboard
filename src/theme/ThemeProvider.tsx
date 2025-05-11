@@ -13,11 +13,14 @@ export function MuiThemeProvider({ children, mode = "light" }: ThemeContextProps
         palette: {
           mode,
           primary: {
-            main: "#0e0f45", // Changed from #4f46e5 to #0e0f45
+            main: "#6b46c1",
+          },
+          secondary: {
+            main: "#a78bfa",
           },
           background: {
-            default: mode === "light" ? "#f9fafb" : "#111827",
-            paper: mode === "light" ? "#ffffff" : "#1f2937",
+            default: mode === "light" ? "#f8f7fc" : "#1a1429",
+            paper: mode === "light" ? "#ffffff" : "#281e3d",
           },
         },
         typography: {

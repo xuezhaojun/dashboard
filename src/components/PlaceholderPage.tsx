@@ -35,7 +35,6 @@ export default function PlaceholderPage({ title }: PlaceholderPageProps) {
         </Typography>
         <Button
           variant="contained"
-          sx={{ bgcolor: "#4f46e5", "&:hover": { bgcolor: "#4338ca" } }}
           onClick={() => navigate("/clusters")}
         >
           Back to Dashboard

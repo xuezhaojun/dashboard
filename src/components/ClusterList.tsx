@@ -154,7 +154,6 @@ const ClusterList = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            sx={{ bgcolor: "#4f46e5", "&:hover": { bgcolor: "#4338ca" } }}
           >
             Add Cluster
           </Button>
@@ -376,7 +375,7 @@ const ClusterList = () => {
 
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Button variant="contained" sx={{ bgcolor: "#4f46e5", "&:hover": { bgcolor: "#4338ca" } }}>
+              <Button variant="contained">
                 Manage
               </Button>
               <Button variant="outlined" startIcon={<ContentCopyIcon />}>
