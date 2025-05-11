@@ -1,20 +1,32 @@
 import { Box, Typography, Paper, Grid, alpha, useTheme } from "@mui/material"
 import { CheckCircle as CheckCircleIcon, Storage as StorageIcon } from "@mui/icons-material"
-
-// Mock data
-const clusterStats = {
-  total: 12,
-  available: 8,
-  regions: [
-    { name: "us-west", count: 4 },
-    { name: "us-east", count: 3 },
-    { name: "eu-west", count: 3 },
-    { name: "ap-south", count: 2 },
-  ],
-}
+import { useEffect, useState } from "react"
+import { fetchClusters } from "../api/clusterService"
+import type { Cluster } from "../api/clusterService"
 
 export default function OverviewPage() {
   const theme = useTheme()
+  const [clusters, setClusters] = useState<Cluster[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadClusters = async () => {
+      setLoading(true)
+      try {
+        const data = await fetchClusters()
+        setClusters(data)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadClusters()
+  }, [])
+
+  // Calculate stats from real data
+  const total = clusters.length
+  const available = clusters.filter(
+    c => c.status === "Online" || c.status === "healthy" || c.status === "Available"
+  ).length
 
   return (
     <Box sx={{ p: 3 }}>
@@ -55,7 +67,7 @@ export default function OverviewPage() {
                   All Clusters
                 </Typography>
                 <Typography variant="h3" sx={{ fontWeight: "medium" }}>
-                  {clusterStats.total}
+                  {loading ? "-" : total}
                 </Typography>
               </Box>
             </Box>
@@ -93,7 +105,7 @@ export default function OverviewPage() {
                   Available Clusters
                 </Typography>
                 <Typography variant="h3" sx={{ fontWeight: "medium" }}>
-                  {clusterStats.available}
+                  {loading ? "-" : available}
                 </Typography>
               </Box>
             </Box>
@@ -119,20 +131,20 @@ export default function OverviewPage() {
                     left: 0,
                     top: 0,
                     height: "100%",
-                    width: `${(clusterStats.available / clusterStats.total) * 100}%`,
+                    width: total > 0 ? `${(available / total) * 100}%` : 0,
                     bgcolor: "success.main",
                     borderRadius: 4,
                   }}
                 />
               </Box>
               <Typography variant="body2" fontWeight="medium" sx={{ ml: 2, minWidth: 40 }}>
-                {Math.round((clusterStats.available / clusterStats.total) * 100)}%
+                {loading || total === 0 ? '-' : Math.round((available / total) * 100)}%
               </Typography>
             </Box>
 
             <Box sx={{ mt: "auto" }}>
               <Typography variant="body2" color="text.secondary">
-                {clusterStats.total - clusterStats.available} clusters currently unavailable
+                {loading ? '-' : total - available} clusters currently unavailable
               </Typography>
             </Box>
           </Paper>
