@@ -81,9 +81,11 @@ export default function AppBar({ open, drawerWidth, onDrawerToggle }: AppBarProp
 
         {/* Logo */}
         <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-          <svg viewBox="0 0 24 24" width="24" height="24" style={{ color: 'white' }}>
-            <path fill="currentColor" d="M12 2 2 7v10l10 5 10-5V7Z" />
-          </svg>
+          <img
+            src="/favicons/android-chrome-192x192.png"
+            alt="OCM Logo"
+            style={{ width: '24px', height: '24px' }}
+          />
           <Typography
             variant="h6"
             noWrap
