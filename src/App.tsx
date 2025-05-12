@@ -45,7 +45,6 @@ function AppContent() {
           <Route path="clusters" element={<ClusterList />} />
           <Route path="clusters/:name" element={<ClusterDetail />} />
           <Route path="placements" element={<PlaceholderPage title="Placements" />} />
-          <Route path="policies" element={<PlaceholderPage title="Policies" />} />
           <Route path="addons" element={<PlaceholderPage title="Add-ons" />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
           <Route index element={<Navigate to="/overview" />} />
