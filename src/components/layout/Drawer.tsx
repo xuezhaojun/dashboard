@@ -16,7 +16,6 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import StorageIcon from '@mui/icons-material/Storage';
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
-import SecurityIcon from '@mui/icons-material/Security';
 import ExtensionIcon from '@mui/icons-material/Extension';  
 
 interface DrawerProps {
@@ -59,7 +58,6 @@ const navItems = [
   { text: 'Overview', icon: <DashboardIcon />, path: '/overview' },
   { text: 'Clusters', icon: <StorageIcon />, path: '/clusters' },
   { text: 'Placements', icon: <DeviceHubIcon />, path: '/placements' },
-  { text: 'Policies', icon: <SecurityIcon />, path: '/policies' },
   { text: 'Add-ons', icon: <ExtensionIcon />, path: '/addons' },
 ];
 
