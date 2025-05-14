@@ -41,16 +41,8 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
 
   // Get status text
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'healthy':
-        return 'Healthy';
-      case 'warning':
-        return 'Warning';
-      case 'critical':
-        return 'Critical';
-      default:
-        return status;
-    }
+    // 直接返回状态值，不再进行转换
+    return status;
   };
 
   // Format date

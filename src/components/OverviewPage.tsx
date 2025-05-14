@@ -24,9 +24,8 @@ export default function OverviewPage() {
 
   // Calculate stats from real data
   const total = clusters.length
-  const available = clusters.filter(
-    c => c.status === "Online" || c.status === "healthy" || c.status === "Available"
-  ).length
+  // 只使用"Online"状态作为可用集群的判断标准
+  const available = clusters.filter(c => c.status === "Online").length
 
   return (
     <Box sx={{ p: 3 }}>

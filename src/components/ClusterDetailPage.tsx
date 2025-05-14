@@ -3,7 +3,7 @@ import { Box, CircularProgress, Typography, Button } from '@mui/material';
 import { useCluster } from '../hooks/useCluster';
 import ClusterDetailContent from './ClusterDetailContent';
 import PageLayout from './layout/PageLayout';
-import { CheckCircle as CheckCircleIcon, Warning as WarningIcon, Error as ErrorIcon } from '@mui/icons-material';
+import { CheckCircle as CheckCircleIcon, Error as ErrorIcon } from '@mui/icons-material';
 
 /**
  * Page component for displaying cluster details
@@ -18,12 +18,8 @@ export default function ClusterDetailPage() {
 
     switch (status) {
       case 'Online':
-      case 'healthy':
         return <CheckCircleIcon sx={{ color: 'success.main' }} />;
-      case 'warning':
-        return <WarningIcon sx={{ color: 'warning.main' }} />;
       case 'Offline':
-      case 'critical':
         return <ErrorIcon sx={{ color: 'error.main' }} />;
       default:
         return null;

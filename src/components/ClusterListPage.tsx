@@ -29,7 +29,6 @@ import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
   CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
   Error as ErrorIcon,
   Launch as LaunchIcon,
 } from "@mui/icons-material";
@@ -114,12 +113,8 @@ export default function ClusterListPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "Online":
-      case "healthy":
         return <CheckCircleIcon sx={{ color: "success.main" }} />;
-      case "warning":
-        return <WarningIcon sx={{ color: "warning.main" }} />;
       case "Offline":
-      case "critical":
         return <ErrorIcon sx={{ color: "error.main" }} />;
       default:
         return null;
@@ -176,7 +171,6 @@ export default function ClusterListPage() {
                   <MenuItem value="all">All Statuses</MenuItem>
                   <MenuItem value="Online">Online</MenuItem>
                   <MenuItem value="Offline">Offline</MenuItem>
-                  <MenuItem value="Warning">Warning</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
