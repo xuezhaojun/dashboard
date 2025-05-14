@@ -79,6 +79,7 @@ type Cluster struct {
 	ClusterClaims               []ClusterClaim               `json:"clusterClaims,omitempty"`
 	Taints                      []Taint                      `json:"taints,omitempty"`
 	ManagedClusterClientConfigs []ManagedClusterClientConfig `json:"managedClusterClientConfigs,omitempty"`
+	CreationTimestamp           string                       `json:"creationTimestamp,omitempty"`
 }
 
 func main() {
@@ -214,10 +215,11 @@ func main() {
 				// Return mock data
 				mockClusters := []Cluster{
 					{
-						ID:      "mock-cluster-1",
-						Name:    "mock-cluster-1",
-						Status:  "Online",
-						Version: "4.12.0",
+						ID:                "mock-cluster-1",
+						Name:              "mock-cluster-1",
+						Status:            "Online",
+						Version:           "4.12.0",
+						CreationTimestamp: time.Now().AddDate(0, -1, 0).Format(time.RFC3339),
 						Labels: map[string]string{
 							"vendor": "OpenShift",
 							"region": "us-east-1",
@@ -240,10 +242,11 @@ func main() {
 						},
 					},
 					{
-						ID:      "mock-cluster-2",
-						Name:    "mock-cluster-2",
-						Status:  "Offline",
-						Version: "4.11.0",
+						ID:                "mock-cluster-2",
+						Name:              "mock-cluster-2",
+						Status:            "Offline",
+						Version:           "4.11.0",
+						CreationTimestamp: time.Now().AddDate(0, -2, 0).Format(time.RFC3339),
 						Labels: map[string]string{
 							"vendor": "OpenShift",
 							"region": "us-west-1",
@@ -291,10 +294,11 @@ func main() {
 			for _, item := range list.Items {
 				// Extract the basic metadata
 				cluster := Cluster{
-					ID:     string(item.GetUID()),
-					Name:   item.GetName(),
-					Status: "Unknown",
-					Labels: item.GetLabels(),
+					ID:                string(item.GetUID()),
+					Name:              item.GetName(),
+					Status:            "Unknown",
+					Labels:            item.GetLabels(),
+					CreationTimestamp: item.GetCreationTimestamp().Format(time.RFC3339),
 				}
 
 				// Extract version from status field
@@ -462,10 +466,11 @@ func main() {
 				// Mock a single cluster based on name
 				if name == "mock-cluster-1" {
 					mockCluster := Cluster{
-						ID:      "mock-cluster-1",
-						Name:    "mock-cluster-1",
-						Status:  "Online",
-						Version: "4.12.0",
+						ID:                "mock-cluster-1",
+						Name:              "mock-cluster-1",
+						Status:            "Online",
+						Version:           "4.12.0",
+						CreationTimestamp: time.Now().AddDate(0, -1, 0).Format(time.RFC3339),
 						Labels: map[string]string{
 							"vendor": "OpenShift",
 							"region": "us-east-1",
@@ -493,10 +498,11 @@ func main() {
 					return
 				} else if name == "mock-cluster-2" {
 					mockCluster := Cluster{
-						ID:      "mock-cluster-2",
-						Name:    "mock-cluster-2",
-						Status:  "Offline",
-						Version: "4.11.0",
+						ID:                "mock-cluster-2",
+						Name:              "mock-cluster-2",
+						Status:            "Offline",
+						Version:           "4.11.0",
+						CreationTimestamp: time.Now().AddDate(0, -2, 0).Format(time.RFC3339),
 						Labels: map[string]string{
 							"vendor": "OpenShift",
 							"region": "us-west-1",
@@ -546,10 +552,11 @@ func main() {
 
 			// Convert to our simplified Cluster format
 			cluster := Cluster{
-				ID:     string(item.GetUID()),
-				Name:   item.GetName(),
-				Status: "Unknown",
-				Labels: item.GetLabels(),
+				ID:                string(item.GetUID()),
+				Name:              item.GetName(),
+				Status:            "Unknown",
+				Labels:            item.GetLabels(),
+				CreationTimestamp: item.GetCreationTimestamp().Format(time.RFC3339),
 			}
 
 			// Extract version from status field

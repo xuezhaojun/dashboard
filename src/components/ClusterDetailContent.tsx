@@ -1,10 +1,7 @@
-import { useState } from 'react';
 import {
   Box,
   Typography,
   Grid,
-  Tabs,
-  Tab,
   Table,
   TableBody,
   TableCell,
@@ -13,8 +10,6 @@ import {
   TableRow,
   Chip,
   Button,
-  alpha,
-  useTheme,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -30,14 +25,45 @@ interface ClusterDetailContentProps {
  * Component for displaying cluster details
  * Can be used in both drawer and page layouts
  */
-export default function ClusterDetailContent({ cluster, compact = false }: ClusterDetailContentProps) {
-  const theme = useTheme();
-  // Default to Events tab (index 0 after removing Nodes and Namespaces tabs)
-  const [detailTab, setDetailTab] = useState(0);
+// 格式化内存和存储大小为人类可读格式
+const formatResourceSize = (value: string | undefined): string => {
+  if (!value) return '-';
 
-  const handleDetailTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setDetailTab(newValue);
-  };
+  // 处理带有单位的字符串，如 "16417196Ki"
+  const match = value.match(/^(\d+)(\w+)$/);
+  if (!match) return value;
+
+  const [, numStr, unit] = match;
+  const num = parseInt(numStr, 10);
+
+  // 根据单位进行转换
+  switch (unit) {
+    case 'Ki': // Kibibytes
+      if (num > 1024 * 1024) {
+        return `${(num / (1024 * 1024)).toFixed(2)} GiB`;
+      } else if (num > 1024) {
+        return `${(num / 1024).toFixed(2)} MiB`;
+      }
+      return `${num} KiB`;
+
+    case 'Mi': // Mebibytes
+      if (num > 1024) {
+        return `${(num / 1024).toFixed(2)} GiB`;
+      }
+      return `${num} MiB`;
+
+    case 'Gi': // Gibibytes
+      return `${num} GiB`;
+
+    case 'Ti': // Tebibytes
+      return `${num} TiB`;
+
+    default:
+      return value;
+  }
+};
+
+export default function ClusterDetailContent({ cluster, compact = false }: ClusterDetailContentProps) {
 
   // Get status text
   const getStatusText = (status: string) => {
@@ -70,17 +96,13 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
           </Grid>
           <Grid size={{ xs: 6, sm: 6 }}>
             <Typography variant="body2" color="text.secondary">
-              Type
+              Creation Date
             </Typography>
-            <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-              {cluster.labels?.env || 'Unknown'}
+            <Typography variant="body1">
+              {cluster.creationTimestamp
+                ? new Date(cluster.creationTimestamp).toLocaleString('en-US')
+                : 'Unknown'}
             </Typography>
-          </Grid>
-          <Grid size={{ xs: 6, sm: 6 }}>
-            <Typography variant="body2" color="text.secondary">
-              Region
-            </Typography>
-            <Typography variant="body1">{cluster.labels?.region || 'Unknown'}</Typography>
           </Grid>
           <Grid size={{ xs: 6, sm: 6 }}>
             <Typography variant="body2" color="text.secondary">
@@ -101,6 +123,25 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
             <Typography variant="body1">
               {formatDate(cluster.conditions?.[0]?.lastTransitionTime)}
             </Typography>
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Labels
+            </Typography>
+            {cluster.labels ? (
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {Object.entries(cluster.labels).map(([key, value]) => (
+                  <Chip
+                    key={key}
+                    label={`${key}: ${value}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body1">-</Typography>
+            )}
           </Grid>
         </Grid>
       </Box>
@@ -153,14 +194,14 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
                 </TableRow>
                 <TableRow>
                   <TableCell>Memory</TableCell>
-                  <TableCell>{cluster.capacity?.memory || '-'}</TableCell>
-                  <TableCell>{cluster.allocatable?.memory || '-'}</TableCell>
+                  <TableCell>{formatResourceSize(cluster.capacity?.memory)}</TableCell>
+                  <TableCell>{formatResourceSize(cluster.allocatable?.memory)}</TableCell>
                 </TableRow>
                 {cluster.capacity?.['ephemeral-storage'] && (
                   <TableRow>
                     <TableCell>Storage</TableCell>
-                    <TableCell>{cluster.capacity?.['ephemeral-storage'] || '-'}</TableCell>
-                    <TableCell>{cluster.allocatable?.['ephemeral-storage'] || '-'}</TableCell>
+                    <TableCell>{formatResourceSize(cluster.capacity?.['ephemeral-storage'])}</TableCell>
+                    <TableCell>{formatResourceSize(cluster.allocatable?.['ephemeral-storage'])}</TableCell>
                   </TableRow>
                 )}
                 {cluster.capacity?.pods && (
@@ -176,26 +217,16 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
         </Box>
       )}
 
-      {/* Tabs for additional information */}
+      {/* Conditions information */}
       <Box sx={{ width: '100%', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={detailTab} onChange={handleDetailTabChange} aria-label="cluster detail tabs">
-            <Tab label="Events" />
-            {!compact && <Tab label="Conditions" />}
-          </Tabs>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+            Conditions
+          </Typography>
         </Box>
 
-        {/* Events tab */}
-        {detailTab === 0 && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), borderRadius: 1, flexGrow: 1, overflow: 'auto' }}>
-            <Typography variant="body2" sx={{ fontFamily: 'monospace', textAlign: 'center' }}>
-              No event data available
-            </Typography>
-          </Box>
-        )}
-
-        {/* Conditions tab - only in full page mode */}
-        {!compact && detailTab === 1 && cluster.conditions && cluster.conditions.length > 0 && (
+        {/* Conditions content */}
+        {cluster.conditions && cluster.conditions.length > 0 && (
           <Box sx={{ mt: 2, flexGrow: 1, overflow: 'auto' }}>
             <TableContainer>
               <Table size="small">

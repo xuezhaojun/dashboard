@@ -192,8 +192,8 @@ export default function ClusterListPage() {
                 <TableCell>Name</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Hub Accepted</TableCell>
-                <TableCell>Version</TableCell>
-                <TableCell>Region</TableCell>
+                <TableCell>Labels</TableCell>
+                <TableCell>Creation Date</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -242,9 +242,33 @@ export default function ClusterListPage() {
                         color={cluster.hubAccepted ? "success" : "default"}
                       />
                     </TableCell>
-                    <TableCell>{cluster.version || "Unknown"}</TableCell>
                     <TableCell>
-                      {cluster.labels?.region || "-"}
+                      {cluster.labels ? (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                          {Object.entries(cluster.labels).slice(0, 2).map(([key, value]) => (
+                            <Chip
+                              key={key}
+                              label={`${key}: ${value}`}
+                              size="small"
+                              variant="outlined"
+                            />
+                          ))}
+                          {Object.keys(cluster.labels).length > 2 && (
+                            <Chip
+                              label={`+${Object.keys(cluster.labels).length - 2}`}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {cluster.creationTimestamp
+                        ? new Date(cluster.creationTimestamp).toLocaleDateString()
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       <IconButton

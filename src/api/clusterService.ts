@@ -23,6 +23,7 @@ export interface Cluster {
     value?: string;
     effect: string;
   }[];
+  creationTimestamp?: string; // From metadata.creationTimestamp
   // Removing nodes field as it's not available in ManagedCluster
 }
 
@@ -59,6 +60,7 @@ export const fetchClusters = async (): Promise<Cluster[]> => {
             status: "Online",
             version: "4.12.0",
             hubAccepted: true,
+            creationTimestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
             labels: {
               vendor: "OpenShift",
               region: "us-east-1",
@@ -102,6 +104,7 @@ export const fetchClusters = async (): Promise<Cluster[]> => {
             status: "Offline",
             version: "4.11.0",
             hubAccepted: true,
+            creationTimestamp: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
             labels: {
               vendor: "OpenShift",
               region: "us-west-1",
@@ -172,6 +175,7 @@ export const fetchClusterByName = async (name: string): Promise<Cluster | null> 
             status: "Online",
             version: "4.12.0",
             hubAccepted: true,
+            creationTimestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
             labels: {
               vendor: "OpenShift",
               region: "us-east-1",
@@ -224,6 +228,7 @@ export const fetchClusterByName = async (name: string): Promise<Cluster | null> 
             status: "Offline",
             version: "4.11.0",
             hubAccepted: true,
+            creationTimestamp: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
             labels: {
               vendor: "OpenShift",
               region: "us-west-1",
