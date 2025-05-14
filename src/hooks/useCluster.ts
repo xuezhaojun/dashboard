@@ -14,14 +14,14 @@ interface UseClusterOptions {
  */
 export function useCluster(name: string | null, options: UseClusterOptions = {}) {
   const { initialData = null, skipFetch = false } = options;
-  
+
   const [cluster, setCluster] = useState<Cluster | null>(initialData);
   const [loading, setLoading] = useState<boolean>(!initialData && !!name && !skipFetch);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCluster = async (clusterName: string) => {
     if (!clusterName) {
-      setError('集群名称是必需的');
+      setError('Cluster name is required');
       setLoading(false);
       return;
     }
@@ -33,8 +33,8 @@ export function useCluster(name: string | null, options: UseClusterOptions = {})
       setCluster(data);
       setLoading(false);
     } catch (err) {
-      console.error('获取集群详情时出错:', err);
-      setError('无法加载集群详情');
+      console.error('Error fetching cluster details:', err);
+      setError('Unable to load cluster details');
       setLoading(false);
     }
   };

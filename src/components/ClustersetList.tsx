@@ -21,7 +21,6 @@ import {
 import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
-  MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import { useNavigate } from 'react-router-dom';
 import { fetchClusterSets, type ClusterSet } from '../api/clusterSetService';
@@ -119,19 +118,17 @@ const ClustersetList = () => {
               <TableCell>Name</TableCell>
               <TableCell>Clusters</TableCell>
               <TableCell>Selector Type</TableCell>
-              <TableCell>Labels</TableCell>
               <TableCell>Created</TableCell>
-              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">Loading cluster sets...</TableCell>
+                <TableCell colSpan={4} align="center">Loading cluster sets...</TableCell>
               </TableRow>
             ) : filteredClusterSets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">No cluster sets found</TableCell>
+                <TableCell colSpan={4} align="center">No cluster sets found</TableCell>
               </TableRow>
             ) : (
               filteredClusterSets.map((clusterSet) => (
@@ -160,28 +157,7 @@ const ClustersetList = () => {
                   <TableCell>
                     {clusterSet.spec?.clusterSelector?.selectorType || "N/A"}
                   </TableCell>
-                  <TableCell>
-                    {clusterSet.labels ? (
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                        {Object.entries(clusterSet.labels).map(([key, value]) => (
-                          <Chip
-                            key={key}
-                            label={`${key}: ${value}`}
-                            size="small"
-                            variant="outlined"
-                          />
-                        ))}
-                      </Box>
-                    ) : (
-                      "-"
-                    )}
-                  </TableCell>
                   <TableCell>{formatDate(clusterSet.creationTimestamp)}</TableCell>
-                  <TableCell>
-                    <IconButton size="small">
-                      <MoreVertIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
                 </TableRow>
               ))
             )}

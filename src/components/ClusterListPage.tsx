@@ -194,7 +194,6 @@ export default function ClusterListPage() {
                 <TableCell>Hub Accepted</TableCell>
                 <TableCell>Labels</TableCell>
                 <TableCell>Creation Date</TableCell>
-                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -269,17 +268,6 @@ export default function ClusterListPage() {
                       {cluster.creationTimestamp
                         ? new Date(cluster.creationTimestamp).toLocaleDateString()
                         : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/clusters/${cluster.name}`);
-                        }}
-                      >
-                        <LaunchIcon fontSize="small" />
-                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))
