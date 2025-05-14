@@ -59,20 +59,26 @@ type ClusterStatus struct {
 	Conditions []Condition `json:"conditions,omitempty"`
 }
 
+// ManagedClusterClientConfig represents the client configuration for a managed cluster
+type ManagedClusterClientConfig struct {
+	URL      string `json:"url"`
+	CABundle string `json:"caBundle,omitempty"`
+}
+
 // Cluster represents a simplified OCM ManagedCluster
 type Cluster struct {
-	ID            string            `json:"id"`
-	Name          string            `json:"name"`
-	Status        string            `json:"status"` // "Online", "Offline", etc.
-	Version       string            `json:"version,omitempty"`
-	Nodes         int               `json:"nodes,omitempty"`
-	Labels        map[string]string `json:"labels,omitempty"`
-	Conditions    []Condition       `json:"conditions,omitempty"`
-	HubAccepted   bool              `json:"hubAccepted"`
-	Capacity      map[string]string `json:"capacity,omitempty"`
-	Allocatable   map[string]string `json:"allocatable,omitempty"`
-	ClusterClaims []ClusterClaim    `json:"clusterClaims,omitempty"`
-	Taints        []Taint           `json:"taints,omitempty"`
+	ID                          string                       `json:"id"`
+	Name                        string                       `json:"name"`
+	Status                      string                       `json:"status"` // "Online", "Offline", etc.
+	Version                     string                       `json:"version,omitempty"`
+	Labels                      map[string]string            `json:"labels,omitempty"`
+	Conditions                  []Condition                  `json:"conditions,omitempty"`
+	HubAccepted                 bool                         `json:"hubAccepted"`
+	Capacity                    map[string]string            `json:"capacity,omitempty"`
+	Allocatable                 map[string]string            `json:"allocatable,omitempty"`
+	ClusterClaims               []ClusterClaim               `json:"clusterClaims,omitempty"`
+	Taints                      []Taint                      `json:"taints,omitempty"`
+	ManagedClusterClientConfigs []ManagedClusterClientConfig `json:"managedClusterClientConfigs,omitempty"`
 }
 
 func main() {
@@ -212,11 +218,16 @@ func main() {
 						Name:    "mock-cluster-1",
 						Status:  "Online",
 						Version: "4.12.0",
-						Nodes:   3,
 						Labels: map[string]string{
 							"vendor": "OpenShift",
 							"region": "us-east-1",
 							"env":    "development",
+						},
+						ManagedClusterClientConfigs: []ManagedClusterClientConfig{
+							{
+								URL:      "https://cluster1-control-plane:6443",
+								CABundle: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJWEZtWkR0bjdXM2N3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TlRBMU1UUXdPVEk1TWpoYUZ3MHpOVEExTVRJd09UTTBNamhhTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUUM2N0FXYSt2b1FQaE8xd05xUXdncjZxT0tuWW1hOWNTT0NCMHFTVW1VQUh0T29wSG1LWXArNzFMR1kKT0RXODB3M1FnMUJkTWw5Y0h1UVBjK043MTJsbzQwVVJMcDVCOEhoR2ZiZWlZOVhlWWZIYkRMdWpaV2tSaHI0agpOckNUcWRCN1JUYmhSY1NPKyszVVlGRG8ybVpSdmVBbGFyc25ldXJFNW5LL2RITU1Xb0hYL1VUcXBhc2RaTTZaCkVJaVNseldGUVYxWnpjTVBNVmZ4WjhlT1FWZjVqdHY4NnNhOTc1aFFhOG1WYXh6QTdjTzdiNTJYM200cXhuUWwKK1Voa1dTSC9GWXlEdE9vd3NFSDYvd25LRWY1Y3NiWFpJK2RGQ3EwWjU1b0JrbGcyMDlhSEJPOGUzYm1lZWE1dwpYQ1NBd2JpWm1wM0p1a203ODN5dkRyUWZodTRGQWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJSd3NlVXh4cHNvOE1qNlZ4Wnl4RDUyYVU5K1pEQVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQVVYZFFPN2NSMQpJWUhXVkxEZ0JFUTdJRUJqcjYrSS9MbCt0bzF1STZiQ3o0dmxmMEJ6ZnBaQllCQmFxdzM5dERtaGcwUys5ZnEvClFyL1ZMUHlLeUpuOC9zdmQzbjUzRy9pNC9HM2JGcVc4azc3M3hSK3hkV21TcnAybEFnRGFEU0cxZVlUUEZFN3UKZTQ4T01WcGNRaHNEbmRZY2ExNnJ6LzZ5WlpONkxiY0dXbUV6bEtxN1EyamVsaGNwZnpSWjlqMGJxRTRNSmg1Rgo5cEY2encyMnNKd2pvanhVQzMyVHNGczN4bndMMDRuUDREcHM2TkJBbTFXWmlxbTJJSDJHWHh4SVVFbVpOUWZmCmxET3hIdGJONU5yR2xRVUdrWDJQdUpyOXdFS0lOSWtYaHlYS0tvRngzUFg3d2VSWnB6TWZOR2UrU0JUVkFjTmkKbi9IMjdRODF0L3orCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+							},
 						},
 						Conditions: []Condition{
 							{
@@ -233,11 +244,16 @@ func main() {
 						Name:    "mock-cluster-2",
 						Status:  "Offline",
 						Version: "4.11.0",
-						Nodes:   5,
 						Labels: map[string]string{
 							"vendor": "OpenShift",
 							"region": "us-west-1",
 							"env":    "staging",
+						},
+						ManagedClusterClientConfigs: []ManagedClusterClientConfig{
+							{
+								URL:      "https://cluster2-control-plane:6443",
+								CABundle: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJWnhLblFMVFovaG93RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TlRBMU1UUXdPVEk1TXpsYUZ3MHpOVEExTVRJd09UTTBNemxhTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUURndFVaM0JTT3pNWGZWZ3hZM3dpSGh5UGlqVU1Jb3JvYmRaY2FldDlLTnBqcU9RRHloQ05tTzAya1QKeGFkT1RtY0dJMmtPeDNvUE9PRGorWkd3cndXNjdtV0dTeTVHTGI5SlJJc1VydWZ4Rkt3cHk1L291dzBZU3lUVwphMkVNTmp1TS9TYmxHdE5lZHRaRkRVYXY5K015ejU2ZjBEZm1XdlRGNlNudEJLOGNLNEdYUXlPOGFzaC8xL1hOClRYQ2IxbjJldmllUlRiclp3aTR0d2kyQmFBVlc0dTArWmU0TWJaU3h1U01rL2t1UG02TXhVZUdHSXpUY1F2RXUKdjBzSDVPejRqeXRLbGsyR2Z1SXVwSXNQbGVrVWN5dS9wZnpvY0hmZlNpMVpla3YyNW1CMzlWN256TXZONWRjNAo2VXhPbjBjZGIvMU1xenhCVENjL0dDSGR1OHJaQWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJTSDNmVWdXdG9UTEhYK2ZKUmZScnhuNVViUFd6QVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ1hHd1Fzcjdpbgo3aXlqL3VCZTVPOTR6NVJMck0vZWR4U1M4ZkFIMzJrR2t6d0lzOFdoZUZJVHZuTC96UzBUY0Q4cll0Z3dmSThvCkE2WE1PaGxFVlJML0trQldFR2xLN0dyV0gva2orcjdpRjdTN2FoMzdRQUFSeTlCcGhPc1U1eERyaFAzN2gyMlYKeUVnQjhiWDJJcHJXdEwxZDhTeEVVRHFPMlV3a1VaVmIyK1RtV0lCMnpsT01CU0hjQ016VVNESWx4WTdPSzZXNgpTQ3djSmdtek1uWDFnMUQyZXRGM0p4eW5PU2k4VEoyejRLbFlZQk9tQ01uTHovaWIwVjNHMTNkRVVZamt0YXdxCmp2bHJuM2x5OVNDUThsZUdzNmVLTW4xYUNZZ2dpeUl6MllMbW45bEhHSUhJNU05Y0o1Z2lXcDlPVHM5MUt6d3EKb3FFcVRxaFBHZnhxCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+							},
 						},
 						Conditions: []Condition{
 							{
@@ -385,6 +401,27 @@ func main() {
 						cluster.HubAccepted = hubAccepts
 					}
 
+					// Extract managedClusterClientConfigs
+					if configs, found, _ := unstructured.NestedSlice(spec, "managedClusterClientConfigs"); found {
+						clientConfigs := make([]ManagedClusterClientConfig, 0, len(configs))
+						for _, c := range configs {
+							configMap, ok := c.(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							config := ManagedClusterClientConfig{}
+							if url, found, _ := unstructured.NestedString(configMap, "url"); found {
+								config.URL = url
+							}
+							if caBundle, found, _ := unstructured.NestedString(configMap, "caBundle"); found {
+								config.CABundle = caBundle
+							}
+							clientConfigs = append(clientConfigs, config)
+						}
+						cluster.ManagedClusterClientConfigs = clientConfigs
+					}
+
 					// Extract taints
 					if taints, found, _ := unstructured.NestedSlice(spec, "taints"); found {
 						clusterTaints := make([]Taint, 0, len(taints))
@@ -429,7 +466,6 @@ func main() {
 						Name:    "mock-cluster-1",
 						Status:  "Online",
 						Version: "4.12.0",
-						Nodes:   3,
 						Labels: map[string]string{
 							"vendor": "OpenShift",
 							"region": "us-east-1",
@@ -461,7 +497,6 @@ func main() {
 						Name:    "mock-cluster-2",
 						Status:  "Offline",
 						Version: "4.11.0",
-						Nodes:   5,
 						Labels: map[string]string{
 							"vendor": "OpenShift",
 							"region": "us-west-1",
@@ -621,6 +656,27 @@ func main() {
 					cluster.HubAccepted = hubAccepts
 				}
 
+				// Extract managedClusterClientConfigs
+				if configs, found, _ := unstructured.NestedSlice(spec, "managedClusterClientConfigs"); found {
+					clientConfigs := make([]ManagedClusterClientConfig, 0, len(configs))
+					for _, c := range configs {
+						configMap, ok := c.(map[string]interface{})
+						if !ok {
+							continue
+						}
+
+						config := ManagedClusterClientConfig{}
+						if url, found, _ := unstructured.NestedString(configMap, "url"); found {
+							config.URL = url
+						}
+						if caBundle, found, _ := unstructured.NestedString(configMap, "caBundle"); found {
+							config.CABundle = caBundle
+						}
+						clientConfigs = append(clientConfigs, config)
+					}
+					cluster.ManagedClusterClientConfigs = clientConfigs
+				}
+
 				// Extract taints
 				if taints, found, _ := unstructured.NestedSlice(spec, "taints"); found {
 					clusterTaints := make([]Taint, 0, len(taints))
@@ -682,14 +738,12 @@ func main() {
 						Name:    "mock-cluster-1",
 						Status:  "Online",
 						Version: "4.12.0",
-						Nodes:   3,
 					},
 					{
 						ID:      "mock-cluster-2",
 						Name:    "mock-cluster-2",
 						Status:  "Offline",
 						Version: "4.11.0",
-						Nodes:   5,
 					},
 				}
 

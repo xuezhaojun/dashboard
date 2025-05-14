@@ -109,7 +109,7 @@ export default function ClusterListPage() {
     }
   };
 
-  // Get status icon
+  // Get status icon based on ManagedClusterConditionAvailable
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "Online":

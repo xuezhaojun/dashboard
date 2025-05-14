@@ -84,9 +84,9 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
           </Grid>
           <Grid size={{ xs: 6, sm: 6 }}>
             <Typography variant="body2" color="text.secondary">
-              Nodes
+              Hub Accepted
             </Typography>
-            <Typography variant="body1">{cluster.nodes || 'Unknown'}</Typography>
+            <Typography variant="body1">{cluster.hubAccepted ? 'Yes' : 'No'}</Typography>
           </Grid>
           <Grid size={{ xs: 6, sm: 6 }}>
             <Typography variant="body2" color="text.secondary">
@@ -104,6 +104,31 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
           </Grid>
         </Grid>
       </Box>
+
+      {/* Cluster URL information if available */}
+      {cluster.managedClusterClientConfigs && cluster.managedClusterClientConfigs.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>
+            Cluster URL Information
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>URL</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {cluster.managedClusterClientConfigs.map((config, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{config.url}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
 
       {/* Resource information if available */}
       {(cluster.capacity || cluster.allocatable) && (
@@ -131,6 +156,20 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
                   <TableCell>{cluster.capacity?.memory || '-'}</TableCell>
                   <TableCell>{cluster.allocatable?.memory || '-'}</TableCell>
                 </TableRow>
+                {cluster.capacity?.['ephemeral-storage'] && (
+                  <TableRow>
+                    <TableCell>Storage</TableCell>
+                    <TableCell>{cluster.capacity?.['ephemeral-storage'] || '-'}</TableCell>
+                    <TableCell>{cluster.allocatable?.['ephemeral-storage'] || '-'}</TableCell>
+                  </TableRow>
+                )}
+                {cluster.capacity?.pods && (
+                  <TableRow>
+                    <TableCell>Pods</TableCell>
+                    <TableCell>{cluster.capacity?.pods || '-'}</TableCell>
+                    <TableCell>{cluster.allocatable?.pods || '-'}</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </TableContainer>
