@@ -18,7 +18,6 @@ import StorageIcon from '@mui/icons-material/Storage';
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import LayersIcon from '@mui/icons-material/Layers';
-import SecurityIcon from '@mui/icons-material/Security';
 
 interface DrawerProps {
   open: boolean;
@@ -61,7 +60,6 @@ const navItems = [
   { text: 'Clusters', icon: <StorageIcon />, path: '/clusters' },
   { text: 'Clustersets', icon: <LayersIcon />, path: '/clustersets' },
   { text: 'Placements', icon: <DeviceHubIcon />, path: '/placements' },
-  { text: 'Policies', icon: <SecurityIcon />, path: '/policies' },
   { text: 'Add-ons', icon: <ExtensionIcon />, path: '/addons' },
 ];
 
