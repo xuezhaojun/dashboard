@@ -15,7 +15,7 @@ export default function ClusterDetailPage() {
   // Get status icon based on cluster status
   const getStatusIcon = (status?: string) => {
     if (!status) return null;
-    
+
     switch (status) {
       case 'Online':
       case 'healthy':
@@ -32,7 +32,7 @@ export default function ClusterDetailPage() {
 
   if (loading) {
     return (
-      <PageLayout title="加载集群详情...">
+      <PageLayout title="Loading Cluster Details...">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
@@ -42,18 +42,18 @@ export default function ClusterDetailPage() {
 
   if (error || !cluster) {
     return (
-      <PageLayout title="集群详情">
+      <PageLayout title="Cluster Details">
         <Box sx={{ py: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="error" gutterBottom>
-            {error || '找不到集群'}
+            {error || 'Cluster not found'}
           </Typography>
-          <Button 
-            variant="contained" 
-            color="primary" 
+          <Button
+            variant="contained"
+            color="primary"
             sx={{ mt: 2 }}
             onClick={() => window.history.back()}
           >
-            返回
+            Back
           </Button>
         </Box>
       </PageLayout>
@@ -61,10 +61,10 @@ export default function ClusterDetailPage() {
   }
 
   return (
-    <PageLayout 
+    <PageLayout
       title={cluster.name}
       backLink="/clusters"
-      backLabel="返回集群列表"
+      backLabel="Back to Clusters"
     >
       <ClusterDetailContent cluster={cluster} />
     </PageLayout>

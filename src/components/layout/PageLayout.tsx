@@ -14,12 +14,12 @@ interface PageLayoutProps {
 /**
  * Layout component for displaying content in a full page
  */
-export default function PageLayout({ 
-  children, 
-  title, 
-  backLink = '/clusters', 
-  backLabel = '返回集群列表',
-  actions 
+export default function PageLayout({
+  children,
+  title,
+  backLink = '/clusters',
+  backLabel = 'Back to Clusters',
+  actions
 }: PageLayoutProps) {
   return (
     <Box sx={{ p: 3, height: '100%' }}>

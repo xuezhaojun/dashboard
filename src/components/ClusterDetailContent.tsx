@@ -17,9 +17,6 @@ import {
   useTheme,
 } from '@mui/material';
 import {
-  CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
-  Error as ErrorIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import type { Cluster } from '../api/clusterService';
@@ -35,26 +32,11 @@ interface ClusterDetailContentProps {
  */
 export default function ClusterDetailContent({ cluster, compact = false }: ClusterDetailContentProps) {
   const theme = useTheme();
+  // Default to Events tab (index 0 after removing Nodes and Namespaces tabs)
   const [detailTab, setDetailTab] = useState(0);
 
   const handleDetailTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setDetailTab(newValue);
-  };
-
-  // Get status icon based on cluster status
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Online':
-      case 'healthy':
-        return <CheckCircleIcon sx={{ color: 'success.main' }} />;
-      case 'warning':
-        return <WarningIcon sx={{ color: 'warning.main' }} />;
-      case 'Offline':
-      case 'critical':
-        return <ErrorIcon sx={{ color: 'error.main' }} />;
-      default:
-        return null;
-    }
   };
 
   // Get status text
@@ -69,18 +51,6 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
       default:
         return status;
     }
-  };
-
-  // Get hub accepted status
-  const getHubAcceptedStatus = () => {
-    if (cluster?.hubAccepted) return 'Accepted';
-    return 'Not Accepted';
-  };
-
-  // Get joined status
-  const getJoinedStatus = () => {
-    const joinedCondition = cluster?.conditions?.find(c => c.type === 'ManagedClusterJoined');
-    return joinedCondition?.status === 'True' ? 'Joined' : 'Not Joined';
   };
 
   // Format date
@@ -179,62 +149,13 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
       <Box sx={{ width: '100%', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={detailTab} onChange={handleDetailTabChange} aria-label="cluster detail tabs">
-            <Tab label="Nodes" />
-            <Tab label="Namespaces" />
             <Tab label="Events" />
             {!compact && <Tab label="Conditions" />}
           </Tabs>
         </Box>
 
-        {/* Node tab */}
-        {detailTab === 0 && (
-          <Box sx={{ mt: 2, flexGrow: 1, overflow: 'auto' }}>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Role</TableCell>
-                    <TableCell>CPU</TableCell>
-                    <TableCell>Memory</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">Node data not available</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        )}
-
-        {/* Namespace tab */}
-        {detailTab === 1 && (
-          <Box sx={{ mt: 2, flexGrow: 1, overflow: 'auto' }}>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Pods</TableCell>
-                    <TableCell>Services</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={4} align="center">Namespace data not available</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        )}
-
         {/* Events tab */}
-        {detailTab === 2 && (
+        {detailTab === 0 && (
           <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), borderRadius: 1, flexGrow: 1, overflow: 'auto' }}>
             <Typography variant="body2" sx={{ fontFamily: 'monospace', textAlign: 'center' }}>
               No event data available
@@ -243,7 +164,7 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
         )}
 
         {/* Conditions tab - only in full page mode */}
-        {!compact && detailTab === 3 && cluster.conditions && cluster.conditions.length > 0 && (
+        {!compact && detailTab === 1 && cluster.conditions && cluster.conditions.length > 0 && (
           <Box sx={{ mt: 2, flexGrow: 1, overflow: 'auto' }}>
             <TableContainer>
               <Table size="small">
