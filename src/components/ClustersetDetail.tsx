@@ -15,46 +15,114 @@ import {
   TableRow,
   alpha,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { useClusterSet } from '../hooks/useClusterSet';
+import { fetchClusters, type Cluster } from '../api/clusterService';
 
-interface ClusterReference {
+// Define the ClusterSetCluster interface to represent clusters in a set
+interface ClusterSetCluster {
+  id: string;
   name: string;
   status: string;
 }
 
-// Mock cluster references - in a real app, this would come from the API
-const mockClusterReferences: Record<string, ClusterReference[]> = {
-  "default": [
-    { name: "cluster-1", status: "Online" },
-    { name: "cluster-2", status: "Online" },
-  ],
-  "global": [
-    { name: "cluster-1", status: "Online" },
-    { name: "cluster-2", status: "Online" },
-  ]
-};
-
 const ClustersetDetail = () => {
   const { name } = useParams<{ name: string }>();
   const theme = useTheme();
-  const [clusterReferences, setClusterReferences] = useState<ClusterReference[]>([]);
+  const [clusterSetClusters, setClusterSetClusters] = useState<ClusterSetCluster[]>([]);
+  const [clustersLoading, setClustersLoading] = useState<boolean>(false);
+  const [clustersError, setClustersError] = useState<string | null>(null);
 
   // Use our custom hook to fetch and manage cluster set data
   const {
     clusterSet,
-    loading,
-    error
+    loading: clusterSetLoading,
+    error: clusterSetError
   } = useClusterSet(name || null);
 
-  // Load cluster references when cluster set changes
+  // Load clusters that belong to this cluster set
   useEffect(() => {
+    const fetchClusterSetClusters = async () => {
+      if (!name || !clusterSet) return;
+
+      try {
+        setClustersLoading(true);
+        setClustersError(null);
+
+        // Fetch all clusters
+        const allClusters = await fetchClusters();
+        let clustersInSet: Cluster[] = [];
+
+        // Get the selector type from the cluster set
+        const selectorType = clusterSet.spec?.clusterSelector?.selectorType || 'ExclusiveClusterSetLabel';
+
+        // Filter clusters based on the selector type
+        switch (selectorType) {
+          case 'ExclusiveClusterSetLabel':
+            // Use the exclusive cluster set label to filter clusters
+            clustersInSet = allClusters.filter(cluster =>
+              cluster.labels &&
+              cluster.labels['cluster.open-cluster-management.io/clusterset'] === name
+            );
+            break;
+
+          case 'LabelSelector': {
+            // Use the label selector to filter clusters
+            const labelSelector = clusterSet.spec?.clusterSelector?.labelSelector;
+
+            if (!labelSelector || Object.keys(labelSelector).length === 0) {
+              // If labelSelector is empty, select all clusters (labels.Everything())
+              clustersInSet = allClusters;
+            } else {
+              // Filter clusters based on the label selector
+              clustersInSet = allClusters.filter(cluster => {
+                if (!cluster.labels) return false;
+
+                // Check if all matchLabels are satisfied
+                for (const [key, value] of Object.entries(labelSelector)) {
+                  if (typeof value === 'string' && cluster.labels[key] !== value) {
+                    return false;
+                  }
+                }
+
+                // TODO: Implement support for matchExpressions part of the labelSelector
+                // This would require handling various operators like In, NotIn, Exists, DoesNotExist
+                // Currently only matchLabels is supported
+
+                return true;
+              });
+            }
+          }
+            break;
+
+          default:
+            setClustersError(`Unsupported selector type: ${selectorType}`);
+            setClustersLoading(false);
+            return;
+        }
+
+        // Map to the simplified ClusterSetCluster format
+        const mappedClusters = clustersInSet.map(cluster => ({
+          id: cluster.id,
+          name: cluster.name,
+          status: cluster.status
+        }));
+
+        setClusterSetClusters(mappedClusters);
+        setClustersLoading(false);
+      } catch (error) {
+        console.error('Error fetching clusters for cluster set:', error);
+        setClustersError('Failed to load clusters for this cluster set');
+        setClustersLoading(false);
+      }
+    };
+
     if (name && clusterSet) {
-      // In a real app, this would be an API call to get clusters in this set
-      setClusterReferences(mockClusterReferences[name] || []);
+      fetchClusterSetClusters();
     }
   }, [name, clusterSet]);
 
@@ -65,15 +133,20 @@ const ClustersetDetail = () => {
     return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
 
-  if (loading) {
+  // Show loading state when either cluster set or clusters are loading
+  if (clusterSetLoading || clustersLoading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography>Loading cluster set details...</Typography>
+      <Box sx={{ p: 3, display: 'flex', alignItems: 'center' }}>
+        <CircularProgress size={24} sx={{ mr: 2 }} />
+        <Typography>
+          {clusterSetLoading ? 'Loading cluster set details...' : 'Loading clusters...'}
+        </Typography>
       </Box>
     );
   }
 
-  if (error || !clusterSet) {
+  // Show error state if there's an error with cluster set or clusters
+  if (clusterSetError || !clusterSet || clustersError) {
     return (
       <Box sx={{ p: 3 }}>
         <Button
@@ -85,7 +158,9 @@ const ClustersetDetail = () => {
           Back to ClusterSets
         </Button>
         <Paper sx={{ p: 3, borderRadius: 2 }}>
-          <Typography color="error">{error || 'Cluster set not found'}</Typography>
+          <Typography color="error">
+            {clusterSetError || clustersError || 'Cluster set not found'}
+          </Typography>
         </Paper>
       </Box>
     );
@@ -134,14 +209,20 @@ const ClustersetDetail = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {clusterReferences.length === 0 ? (
+              {clustersError ? (
+                <TableRow>
+                  <TableCell colSpan={2} align="center" sx={{ color: 'error.main' }}>
+                    Error loading clusters: {clustersError}
+                  </TableCell>
+                </TableRow>
+              ) : clusterSetClusters.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={2} align="center">No clusters in this set</TableCell>
                 </TableRow>
               ) : (
-                clusterReferences.map((cluster) => (
+                clusterSetClusters.map((cluster) => (
                   <TableRow
-                    key={cluster.name}
+                    key={cluster.id}
                     onClick={() => {
                       window.location.href = `/clusters/${cluster.name}`;
                     }}
