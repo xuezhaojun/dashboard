@@ -18,103 +18,49 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
-import { ArrowBack as ArrowBackIcon } from "@mui/icons-material";
-
-// Define interfaces
-interface ClusterSet {
-  id: string;
-  name: string;
-  clusterCount: number;
-  labels?: Record<string, string>;
-  creationTimestamp?: string;
-  clusters?: string[];
-}
+import {
+  ArrowBack as ArrowBackIcon,
+} from "@mui/icons-material";
+import { type ClusterSet } from '../api/clusterSetService';
+import { useClusterSet } from '../hooks/useClusterSet';
 
 interface ClusterReference {
   name: string;
   status: string;
 }
 
-// Mock data for development
-const mockClusterSets: Record<string, ClusterSet> = {
-  "default": {
-    id: "default",
-    name: "default",
-    clusterCount: 3,
-    labels: { environment: "production" },
-    creationTimestamp: new Date().toISOString(),
-    clusters: ["cluster-1", "cluster-2", "cluster-3"]
-  },
-  "dev-clusters": {
-    id: "dev-clusters",
-    name: "dev-clusters",
-    clusterCount: 5,
-    labels: { environment: "development" },
-    creationTimestamp: new Date().toISOString(),
-    clusters: ["dev-cluster-1", "dev-cluster-2", "dev-cluster-3", "dev-cluster-4", "dev-cluster-5"]
-  },
-  "regional-eu": {
-    id: "regional-eu",
-    name: "regional-eu",
-    clusterCount: 2,
-    labels: { region: "europe" },
-    creationTimestamp: new Date().toISOString(),
-    clusters: ["eu-west-1", "eu-central-1"]
-  }
-};
-
-// Mock cluster references
+// Mock cluster references - in a real app, this would come from the API
 const mockClusterReferences: Record<string, ClusterReference[]> = {
   "default": [
     { name: "cluster-1", status: "Online" },
     { name: "cluster-2", status: "Online" },
-    { name: "cluster-3", status: "Offline" }
   ],
-  "dev-clusters": [
-    { name: "dev-cluster-1", status: "Online" },
-    { name: "dev-cluster-2", status: "Online" },
-    { name: "dev-cluster-3", status: "Online" },
-    { name: "dev-cluster-4", status: "Offline" },
-    { name: "dev-cluster-5", status: "Online" }
-  ],
-  "regional-eu": [
-    { name: "eu-west-1", status: "Online" },
-    { name: "eu-central-1", status: "Online" }
+  "global": [
+    { name: "cluster-1", status: "Online" },
+    { name: "cluster-2", status: "Online" },
   ]
 };
 
 const ClustersetDetail = () => {
   const { name } = useParams<{ name: string }>();
   const theme = useTheme();
-  const [clusterSet, setClusterSet] = useState<ClusterSet | null>(null);
-  const [clusterReferences, setClusterReferences] = useState<ClusterReference[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [clusterReferences, setClusterReferences] = useState<ClusterReference[]>([]);
 
+  // Use our custom hook to fetch and manage cluster set data
+  const {
+    clusterSet,
+    loading,
+    error
+  } = useClusterSet(name || null);
+
+  // Load cluster references when cluster set changes
   useEffect(() => {
-    // Simulate API call
-    const loadClusterSet = async () => {
-      try {
-        setLoading(true);
-        // In a real app, this would be an API call
-        // const data = await fetchClusterSet(name);
-        if (name && mockClusterSets[name]) {
-          setClusterSet(mockClusterSets[name]);
-          setClusterReferences(mockClusterReferences[name] || []);
-        } else {
-          setError(`Cluster set "${name}" not found`);
-        }
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching cluster set:', error);
-        setError('Failed to load cluster set details');
-        setLoading(false);
-      }
-    };
-
-    loadClusterSet();
-  }, [name]);
+    if (name && clusterSet) {
+      // In a real app, this would be an API call to get clusters in this set
+      setClusterReferences(mockClusterReferences[name] || []);
+    }
+  }, [name, clusterSet]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -144,7 +90,7 @@ const ClustersetDetail = () => {
           startIcon={<ArrowBackIcon />}
           sx={{ mb: 2 }}
         >
-          Back to Cluster Sets
+          Back to ClusterSets
         </Button>
         <Paper sx={{ p: 3, borderRadius: 2 }}>
           <Typography color="error">{error || 'Cluster set not found'}</Typography>
@@ -161,7 +107,7 @@ const ClustersetDetail = () => {
         startIcon={<ArrowBackIcon />}
         sx={{ mb: 2 }}
       >
-        Back to Cluster Sets
+        Back to ClusterSets
       </Button>
 
       <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
@@ -175,6 +121,10 @@ const ClustersetDetail = () => {
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary">Created</Typography>
             <Typography variant="body1">{formatDate(clusterSet.creationTimestamp)}</Typography>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Typography variant="body2" color="text.secondary">Selector Type</Typography>
+            <Typography variant="body1">{clusterSet.spec?.clusterSelector?.selectorType || "N/A"}</Typography>
           </Grid>
           <Grid size={{ xs: 12 }}>
             <Typography variant="body2" color="text.secondary">Labels</Typography>
@@ -193,6 +143,42 @@ const ClustersetDetail = () => {
               <Typography variant="body1">No labels</Typography>
             )}
           </Grid>
+          {clusterSet.status?.conditions && clusterSet.status.conditions.length > 0 && (
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Conditions</Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                    <TableRow>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Reason</TableCell>
+                      <TableCell>Message</TableCell>
+                      <TableCell>Last Transition</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {clusterSet.status.conditions.map((condition, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{condition.type}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={condition.status}
+                            size="small"
+                            color={condition.status === "True" ? "success" :
+                                  condition.status === "False" ? "primary" : "default"}
+                          />
+                        </TableCell>
+                        <TableCell>{condition.reason || "-"}</TableCell>
+                        <TableCell>{condition.message || "-"}</TableCell>
+                        <TableCell>{formatDate(condition.lastTransitionTime)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Grid>
+          )}
         </Grid>
       </Paper>
 
@@ -264,14 +250,20 @@ const ClustersetDetail = () => {
 kind: ManagedClusterSet
 metadata:
   name: ${clusterSet.name}
-  labels:
-${Object.entries(clusterSet.labels || {}).map(([k, v]) => `    ${k}: ${v}`).join('\n')}
+  creationTimestamp: ${clusterSet.creationTimestamp || ''}
+${clusterSet.labels ? `  labels:
+${Object.entries(clusterSet.labels).map(([k, v]) => `    ${k}: ${v}`).join('\n')}` : ''}
 spec:
   clusterSelector:
-    selectorType: LabelSelector
-    labelSelector:
-      matchLabels:
-        clusterset: ${clusterSet.name}`}
+    selectorType: ${clusterSet.spec?.clusterSelector?.selectorType || 'LabelSelector'}
+${clusterSet.spec?.clusterSelector?.labelSelector ? `    labelSelector: ${JSON.stringify(clusterSet.spec.clusterSelector.labelSelector, null, 2).replace(/^/gm, '    ')}` : ''}
+status:
+  conditions:
+${clusterSet.status?.conditions?.map(c => `  - type: ${c.type}
+    status: ${c.status}
+    reason: ${c.reason || ''}
+    message: ${c.message || ''}
+    lastTransitionTime: ${c.lastTransitionTime || ''}`).join('\n') || '  []'}`}
           </Box>
         )}
       </Paper>

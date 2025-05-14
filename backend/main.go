@@ -23,11 +23,17 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-// Main resource to work with - ManagedCluster from OCM
+// Resources to work with - ManagedCluster and ManagedClusterSet from OCM
 var managedClusterResource = schema.GroupVersionResource{
 	Group:    "cluster.open-cluster-management.io",
 	Version:  "v1",
 	Resource: "managedclusters",
+}
+
+var managedClusterSetResource = schema.GroupVersionResource{
+	Group:    "cluster.open-cluster-management.io",
+	Version:  "v1beta2",
+	Resource: "managedclustersets",
 }
 
 // Condition represents the status condition of a cluster
@@ -80,6 +86,38 @@ type Cluster struct {
 	Taints                      []Taint                      `json:"taints,omitempty"`
 	ManagedClusterClientConfigs []ManagedClusterClientConfig `json:"managedClusterClientConfigs,omitempty"`
 	CreationTimestamp           string                       `json:"creationTimestamp,omitempty"`
+}
+
+// LabelSelector represents a Kubernetes label selector
+type LabelSelector struct {
+	MatchLabels map[string]string `json:"matchLabels,omitempty"`
+}
+
+// ClusterSelector represents the selector for clusters in a ManagedClusterSet
+type ClusterSelector struct {
+	SelectorType  string         `json:"selectorType"`
+	LabelSelector *LabelSelector `json:"labelSelector,omitempty"`
+}
+
+// ClusterSetSpec represents the spec of a ManagedClusterSet
+type ClusterSetSpec struct {
+	ClusterSelector ClusterSelector `json:"clusterSelector"`
+}
+
+// ClusterSetStatus represents the status of a ManagedClusterSet
+type ClusterSetStatus struct {
+	Conditions []Condition `json:"conditions,omitempty"`
+}
+
+// ClusterSet represents a simplified OCM ManagedClusterSet
+type ClusterSet struct {
+	ID                string            `json:"id"`
+	Name              string            `json:"name"`
+	ClusterCount      int               `json:"clusterCount"`
+	Labels            map[string]string `json:"labels,omitempty"`
+	Spec              ClusterSetSpec    `json:"spec,omitempty"`
+	Status            ClusterSetStatus  `json:"status,omitempty"`
+	CreationTimestamp string            `json:"creationTimestamp,omitempty"`
 }
 
 func main() {
@@ -710,6 +748,340 @@ func main() {
 			}
 
 			c.JSON(http.StatusOK, cluster)
+		})
+
+		// Get all cluster sets
+		api.GET("/clustersets", authMiddleware, func(c *gin.Context) {
+			// Check if using mock data
+			if os.Getenv("DASHBOARD_USE_MOCK") == "true" {
+				// Return mock data
+				mockClusterSets := []ClusterSet{
+					{
+						ID:                "default",
+						Name:              "default",
+						ClusterCount:      2,
+						CreationTimestamp: "2025-05-14T09:35:54Z",
+						Spec: ClusterSetSpec{
+							ClusterSelector: ClusterSelector{
+								SelectorType: "ExclusiveClusterSetLabel",
+							},
+						},
+						Status: ClusterSetStatus{
+							Conditions: []Condition{
+								{
+									Type:               "ClusterSetEmpty",
+									Status:             "False",
+									Reason:             "ClustersSelected",
+									Message:            "2 ManagedClusters selected",
+									LastTransitionTime: "2025-05-14T09:37:25Z",
+								},
+							},
+						},
+					},
+					{
+						ID:                "global",
+						Name:              "global",
+						ClusterCount:      2,
+						CreationTimestamp: "2025-05-14T09:35:54Z",
+						Spec: ClusterSetSpec{
+							ClusterSelector: ClusterSelector{
+								SelectorType:  "LabelSelector",
+								LabelSelector: &LabelSelector{},
+							},
+						},
+						Status: ClusterSetStatus{
+							Conditions: []Condition{
+								{
+									Type:               "ClusterSetEmpty",
+									Status:             "False",
+									Reason:             "ClustersSelected",
+									Message:            "2 ManagedClusters selected",
+									LastTransitionTime: "2025-05-14T09:36:18Z",
+								},
+							},
+						},
+					},
+				}
+				c.JSON(http.StatusOK, mockClusterSets)
+				return
+			}
+
+			// Ensure we have a client before proceeding
+			if dynamicClient == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not initialized"})
+				return
+			}
+
+			// List real managed cluster sets
+			list, err := dynamicClient.Resource(managedClusterSetResource).List(ctx, metav1.ListOptions{})
+			if err != nil {
+				if debugMode {
+					log.Printf("Error listing cluster sets: %v", err)
+				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			// Convert to our simplified ClusterSet format
+			clusterSets := make([]ClusterSet, 0, len(list.Items))
+			for _, item := range list.Items {
+				// Extract the basic metadata
+				clusterSet := ClusterSet{
+					ID:                string(item.GetUID()),
+					Name:              item.GetName(),
+					Labels:            item.GetLabels(),
+					CreationTimestamp: item.GetCreationTimestamp().Format(time.RFC3339),
+					ClusterCount:      0, // Will be updated below
+				}
+
+				// Extract spec
+				spec, found, err := unstructured.NestedMap(item.Object, "spec")
+				if err == nil && found {
+					// Extract clusterSelector
+					if clusterSelector, found, _ := unstructured.NestedMap(spec, "clusterSelector"); found {
+						// Extract selectorType
+						if selectorType, found, _ := unstructured.NestedString(clusterSelector, "selectorType"); found {
+							clusterSet.Spec.ClusterSelector.SelectorType = selectorType
+						}
+
+						// Extract labelSelector
+						if labelSelector, found, _ := unstructured.NestedMap(clusterSelector, "labelSelector"); found {
+							clusterSet.Spec.ClusterSelector.LabelSelector = &LabelSelector{}
+
+							// Extract matchLabels
+							if matchLabels, found, _ := unstructured.NestedMap(labelSelector, "matchLabels"); found {
+								matchLabelsMap := make(map[string]string)
+								for k, v := range matchLabels {
+									if strValue, ok := v.(string); ok {
+										matchLabelsMap[k] = strValue
+									}
+								}
+								clusterSet.Spec.ClusterSelector.LabelSelector.MatchLabels = matchLabelsMap
+							}
+						}
+					}
+				}
+
+				// Extract status
+				status, found, err := unstructured.NestedMap(item.Object, "status")
+				if err == nil && found {
+					// Extract conditions
+					if conditions, found, _ := unstructured.NestedSlice(status, "conditions"); found {
+						for _, c := range conditions {
+							condMap, ok := c.(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							condition := Condition{}
+
+							if t, found, _ := unstructured.NestedString(condMap, "type"); found {
+								condition.Type = t
+							}
+
+							if s, found, _ := unstructured.NestedString(condMap, "status"); found {
+								condition.Status = s
+							}
+
+							if r, found, _ := unstructured.NestedString(condMap, "reason"); found {
+								condition.Reason = r
+							}
+
+							if m, found, _ := unstructured.NestedString(condMap, "message"); found {
+								condition.Message = m
+							}
+
+							if lt, found, _ := unstructured.NestedString(condMap, "lastTransitionTime"); found {
+								condition.LastTransitionTime = lt
+							}
+
+							clusterSet.Status.Conditions = append(clusterSet.Status.Conditions, condition)
+
+							// Extract cluster count from ClusterSetEmpty condition message
+							if condition.Type == "ClusterSetEmpty" && condition.Status == "False" && condition.Reason == "ClustersSelected" {
+								// Try to parse the message to get the cluster count
+								var count int
+								_, err := fmt.Sscanf(condition.Message, "%d ManagedClusters selected", &count)
+								if err == nil {
+									clusterSet.ClusterCount = count
+								}
+							}
+						}
+					}
+				}
+
+				clusterSets = append(clusterSets, clusterSet)
+			}
+
+			c.JSON(http.StatusOK, clusterSets)
+		})
+
+		// Get a specific cluster set
+		api.GET("/clustersets/:name", authMiddleware, func(c *gin.Context) {
+			name := c.Param("name")
+
+			// Check if using mock data
+			if os.Getenv("DASHBOARD_USE_MOCK") == "true" {
+				// Mock a single cluster set based on name
+				if name == "default" {
+					mockClusterSet := ClusterSet{
+						ID:                "default",
+						Name:              "default",
+						ClusterCount:      2,
+						CreationTimestamp: "2025-05-14T09:35:54Z",
+						Spec: ClusterSetSpec{
+							ClusterSelector: ClusterSelector{
+								SelectorType: "ExclusiveClusterSetLabel",
+							},
+						},
+						Status: ClusterSetStatus{
+							Conditions: []Condition{
+								{
+									Type:               "ClusterSetEmpty",
+									Status:             "False",
+									Reason:             "ClustersSelected",
+									Message:            "2 ManagedClusters selected",
+									LastTransitionTime: "2025-05-14T09:37:25Z",
+								},
+							},
+						},
+					}
+					c.JSON(http.StatusOK, mockClusterSet)
+					return
+				} else if name == "global" {
+					mockClusterSet := ClusterSet{
+						ID:                "global",
+						Name:              "global",
+						ClusterCount:      2,
+						CreationTimestamp: "2025-05-14T09:35:54Z",
+						Spec: ClusterSetSpec{
+							ClusterSelector: ClusterSelector{
+								SelectorType:  "LabelSelector",
+								LabelSelector: &LabelSelector{},
+							},
+						},
+						Status: ClusterSetStatus{
+							Conditions: []Condition{
+								{
+									Type:               "ClusterSetEmpty",
+									Status:             "False",
+									Reason:             "ClustersSelected",
+									Message:            "2 ManagedClusters selected",
+									LastTransitionTime: "2025-05-14T09:36:18Z",
+								},
+							},
+						},
+					}
+					c.JSON(http.StatusOK, mockClusterSet)
+					return
+				} else {
+					c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Mock cluster set %s not found", name)})
+					return
+				}
+			}
+
+			// Ensure we have a client before proceeding
+			if dynamicClient == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not initialized"})
+				return
+			}
+
+			// Get the real cluster set
+			item, err := dynamicClient.Resource(managedClusterSetResource).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				if debugMode {
+					log.Printf("Error getting cluster set %s: %v", name, err)
+				}
+				c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Cluster set %s not found", name)})
+				return
+			}
+
+			// Extract the basic metadata
+			clusterSet := ClusterSet{
+				ID:                string(item.GetUID()),
+				Name:              item.GetName(),
+				Labels:            item.GetLabels(),
+				CreationTimestamp: item.GetCreationTimestamp().Format(time.RFC3339),
+				ClusterCount:      0, // Will be updated below
+			}
+
+			// Extract spec
+			spec, found, err := unstructured.NestedMap(item.Object, "spec")
+			if err == nil && found {
+				// Extract clusterSelector
+				if clusterSelector, found, _ := unstructured.NestedMap(spec, "clusterSelector"); found {
+					// Extract selectorType
+					if selectorType, found, _ := unstructured.NestedString(clusterSelector, "selectorType"); found {
+						clusterSet.Spec.ClusterSelector.SelectorType = selectorType
+					}
+
+					// Extract labelSelector
+					if labelSelector, found, _ := unstructured.NestedMap(clusterSelector, "labelSelector"); found {
+						clusterSet.Spec.ClusterSelector.LabelSelector = &LabelSelector{}
+
+						// Extract matchLabels
+						if matchLabels, found, _ := unstructured.NestedMap(labelSelector, "matchLabels"); found {
+							matchLabelsMap := make(map[string]string)
+							for k, v := range matchLabels {
+								if strValue, ok := v.(string); ok {
+									matchLabelsMap[k] = strValue
+								}
+							}
+							clusterSet.Spec.ClusterSelector.LabelSelector.MatchLabels = matchLabelsMap
+						}
+					}
+				}
+			}
+
+			// Extract status
+			status, found, err := unstructured.NestedMap(item.Object, "status")
+			if err == nil && found {
+				// Extract conditions
+				if conditions, found, _ := unstructured.NestedSlice(status, "conditions"); found {
+					for _, c := range conditions {
+						condMap, ok := c.(map[string]interface{})
+						if !ok {
+							continue
+						}
+
+						condition := Condition{}
+
+						if t, found, _ := unstructured.NestedString(condMap, "type"); found {
+							condition.Type = t
+						}
+
+						if s, found, _ := unstructured.NestedString(condMap, "status"); found {
+							condition.Status = s
+						}
+
+						if r, found, _ := unstructured.NestedString(condMap, "reason"); found {
+							condition.Reason = r
+						}
+
+						if m, found, _ := unstructured.NestedString(condMap, "message"); found {
+							condition.Message = m
+						}
+
+						if lt, found, _ := unstructured.NestedString(condMap, "lastTransitionTime"); found {
+							condition.LastTransitionTime = lt
+						}
+
+						clusterSet.Status.Conditions = append(clusterSet.Status.Conditions, condition)
+
+						// Extract cluster count from ClusterSetEmpty condition message
+						if condition.Type == "ClusterSetEmpty" && condition.Status == "False" && condition.Reason == "ClustersSelected" {
+							// Try to parse the message to get the cluster count
+							var count int
+							_, err := fmt.Sscanf(condition.Message, "%d ManagedClusters selected", &count)
+							if err == nil {
+								clusterSet.ClusterCount = count
+							}
+						}
+					}
+				}
+			}
+
+			c.JSON(http.StatusOK, clusterSet)
 		})
 
 		// Stream clusters with Server-Sent Events (SSE)

@@ -24,40 +24,7 @@ import {
   MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import { useNavigate } from 'react-router-dom';
-
-// Define ClusterSet interface
-interface ClusterSet {
-  id: string;
-  name: string;
-  clusterCount: number;
-  labels?: Record<string, string>;
-  creationTimestamp?: string;
-}
-
-// Mock data for development
-const mockClusterSets: ClusterSet[] = [
-  {
-    id: "default",
-    name: "default",
-    clusterCount: 3,
-    labels: { environment: "production" },
-    creationTimestamp: new Date().toISOString(),
-  },
-  {
-    id: "dev-clusters",
-    name: "dev-clusters",
-    clusterCount: 5,
-    labels: { environment: "development" },
-    creationTimestamp: new Date().toISOString(),
-  },
-  {
-    id: "regional-eu",
-    name: "regional-eu",
-    clusterCount: 2,
-    labels: { region: "europe" },
-    creationTimestamp: new Date().toISOString(),
-  }
-];
+import { fetchClusterSets, type ClusterSet } from '../api/clusterSetService';
 
 const ClustersetList = () => {
   const theme = useTheme();
@@ -65,18 +32,19 @@ const ClustersetList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [clusterSets, setClusterSets] = useState<ClusterSet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate API call
     const loadClusterSets = async () => {
       try {
         setLoading(true);
-        // In a real app, this would be an API call
-        // const data = await fetchClusterSets();
-        setClusterSets(mockClusterSets);
+        setError(null);
+        const data = await fetchClusterSets();
+        setClusterSets(data);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching cluster sets:', error);
+        setError('Failed to load cluster sets');
         setLoading(false);
       }
     };
@@ -106,7 +74,7 @@ const ClustersetList = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>Cluster Sets</Typography>
+      <Typography variant="h4" sx={{ mb: 3 }}>ClusterSets</Typography>
 
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
         <Grid container spacing={2} alignItems="center" sx={{ width: '100%' }}>
@@ -138,12 +106,19 @@ const ClustersetList = () => {
         </Grid>
       </Paper>
 
+      {error && (
+        <Paper sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main' }}>
+          <Typography>{error}</Typography>
+        </Paper>
+      )}
+
       <TableContainer component={Paper} sx={{ mt: 3 }}>
         <Table>
           <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>Clusters</TableCell>
+              <TableCell>Selector Type</TableCell>
               <TableCell>Labels</TableCell>
               <TableCell>Created</TableCell>
               <TableCell>Actions</TableCell>
@@ -152,17 +127,17 @@ const ClustersetList = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">Loading cluster sets...</TableCell>
+                <TableCell colSpan={6} align="center">Loading cluster sets...</TableCell>
               </TableRow>
             ) : filteredClusterSets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">No cluster sets found</TableCell>
+                <TableCell colSpan={6} align="center">No cluster sets found</TableCell>
               </TableRow>
             ) : (
               filteredClusterSets.map((clusterSet) => (
                 <TableRow
                   key={clusterSet.id}
-                  onClick={() => handleClusterSetSelect(clusterSet.id)}
+                  onClick={() => handleClusterSetSelect(clusterSet.name)}
                   sx={{
                     cursor: "pointer",
                     "&:hover": {
@@ -181,6 +156,9 @@ const ClustersetList = () => {
                       size="small"
                       color="primary"
                     />
+                  </TableCell>
+                  <TableCell>
+                    {clusterSet.spec?.clusterSelector?.selectorType || "N/A"}
                   </TableCell>
                   <TableCell>
                     {clusterSet.labels ? (
