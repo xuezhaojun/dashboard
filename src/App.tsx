@@ -7,6 +7,8 @@ import AppShell from './components/layout/AppShell';
 import PlaceholderPage from './components/PlaceholderPage';
 import OverviewPage from './components/OverviewPage';
 import ClusterList from './components/ClusterList';
+import ClustersetList from './components/ClustersetList';
+import ClustersetDetail from './components/ClustersetDetail';
 import { MuiThemeProvider } from './theme/ThemeProvider';
 
 // Protected route component that redirects to login if not authenticated
@@ -45,8 +47,11 @@ function AppContent() {
           <Route path="clusters" element={<ClusterList />} />
           <Route path="clusters/:name" element={<ClusterDetail />} />
           <Route path="placements" element={<PlaceholderPage title="Placements" />} />
+          <Route path="policies" element={<PlaceholderPage title="Policies" />} />
           <Route path="addons" element={<PlaceholderPage title="Add-ons" />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+          <Route path="clustersets" element={<ClustersetList />} />
+          <Route path="clustersets/:name" element={<ClustersetDetail />} />
           <Route index element={<Navigate to="/overview" />} />
           <Route path="*" element={<Navigate to="/overview" />} />
         </Route>
