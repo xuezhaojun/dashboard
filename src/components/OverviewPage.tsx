@@ -35,9 +35,9 @@ export default function OverviewPage() {
       </Typography>
 
       {/* Simplified KPI cards */}
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{ width: '100%' }}>
         {/* All clusters card */}
-        <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper
             sx={{
               p: 3,
@@ -75,7 +75,7 @@ export default function OverviewPage() {
         </Grid>
 
         {/* Available clusters card */}
-        <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper
             sx={{
               p: 3,

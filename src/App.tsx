@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
-import ClusterDetail from './components/ClusterDetail';
+import ClusterDetailPage from './components/ClusterDetailPage';
 import Login from './components/Login';
 import AppShell from './components/layout/AppShell';
 import PlaceholderPage from './components/PlaceholderPage';
 import OverviewPage from './components/OverviewPage';
-import ClusterList from './components/ClusterList';
+import ClusterListPage from './components/ClusterListPage';
 import ClustersetList from './components/ClustersetList';
 import ClustersetDetail from './components/ClustersetDetail';
 import { MuiThemeProvider } from './theme/ThemeProvider';
@@ -44,8 +44,8 @@ function AppContent() {
         >
           {/* Child routes will be rendered at <Outlet /> in AppShell */}
           <Route path="overview" element={<OverviewPage />} />
-          <Route path="clusters" element={<ClusterList />} />
-          <Route path="clusters/:name" element={<ClusterDetail />} />
+          <Route path="clusters" element={<ClusterListPage />} />
+          <Route path="clusters/:name" element={<ClusterDetailPage />} />
           <Route path="placements" element={<PlaceholderPage title="Placements" />} />
           <Route path="policies" element={<PlaceholderPage title="Policies" />} />
           <Route path="addons" element={<PlaceholderPage title="Add-ons" />} />

@@ -167,7 +167,7 @@ const ClustersetDetail = () => {
       <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <Typography variant="h5" sx={{ mb: 2 }}>{clusterSet.name}</Typography>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ width: '100%' }}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary">Cluster Count</Typography>
             <Typography variant="body1">{clusterSet.clusterCount}</Typography>

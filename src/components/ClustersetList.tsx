@@ -109,7 +109,7 @@ const ClustersetList = () => {
       <Typography variant="h4" sx={{ mb: 3 }}>Cluster Sets</Typography>
 
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={2} alignItems="center" sx={{ width: '100%' }}>
           <Grid size={{ xs: 12, md: 10 }}>
             <TextField
               fullWidth
