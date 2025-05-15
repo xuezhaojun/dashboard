@@ -7,33 +7,47 @@ A dashboard for displaying and monitoring Open Cluster Management (OCM) clusters
 The OCM Dashboard follows a modern architecture pattern for Kubernetes dashboards:
 
 - **Frontend**: React + TypeScript SPA with real-time updates
-- **Backend** (to be implemented): Go API service that connects to the Kubernetes API
+- **Backend**: Go API service that connects to the Kubernetes API (or uses mock data)
 
-![Architecture Diagram](https://mermaid.ink/img/pako:eNqNkctqwzAQRX9lmFUCtiHtplAw2LjEdJVlkYUwY40tVaOJJdmy-6D_XtlxIE3bQjca5p47nJEGa26AMKwkL4VsuUK4cCAEtuBO63euw0aAgtZQS3wV1tJ6g9-1pI4pwbRr2oxwGgE0mYZr3UnXUfOCrthzfXrQ2yzSoJzAD-JCGCVD-y9dxZxJU91Y50VlsfgZbXfMSWsQ3NzXiY73_QcPT_Dx-PoSFbKVcS1dLPtI9gqrVhvU3lEpnrU9j7YwzV2lEUPT8Mq6uOYHkiRJGI5GJI6z-TSYcg_VsJ5xfzYJ4qNIgjNm6TTK8uQYBPvpNMjG433OxbMeJhGGnGrSQ2Mw5JbXEHoeNkZ3GOqmgcpzxNQYA5xpiDqX-Puf93stxeFNHdnPbxY00Wc?type=png)
 
 ### Frontend Components
 
 1. **Authentication**: Bearer token authentication (JWT) stored in localStorage
 2. **ClusterList**: Table view with real-time status updates via Server-Sent Events
 3. **ClusterDetail**: Detailed view of a single cluster with conditions and labels
-4. **API Service**: Abstraction layer for backend communication
+4. **ClusterSetList**: Table view for ManagedClusterSets.
+5. **ClusterSetDetail**: Detailed view for a single ManagedClusterSet.
+6. **API Service**: Abstraction layer for backend communication using `fetch`.
 
-### Backend Components (Planned)
+### Backend Components
 
-1. **API Server**: Go service with the following endpoints:
-   - `GET /api/clusters` - List all clusters
-   - `GET /api/clusters/:name` - Get details for a specific cluster
-   - `GET /api/stream/clusters` - SSE endpoint for real-time updates
-2. **Authentication**: Token validation against Kubernetes TokenReview API
-3. **Kubernetes Client**: Uses client-go to interact with the OCM hub's API
+1. **API Server**: Go service built with Gin, providing the following endpoints:
+   - `GET /api/clusters` - Lists all ManagedClusters.
+   - `GET /api/clusters/:name` - Gets details for a specific ManagedCluster.
+   - `GET /api/clustersets` - Lists all ManagedClusterSets.
+   - `GET /api/clustersets/:name` - Gets details for a specific ManagedClusterSet.
+   - `GET /api/stream/clusters` - SSE endpoint for real-time ManagedCluster updates (currently sends mock data or heartbeats).
+2. **Authentication**: Basic authorization header check. TokenReview validation is a TODO. Can be bypassed with `DASHBOARD_BYPASS_AUTH=true`.
+3. **Kubernetes Client**: Uses `client-go/dynamic` to interact with the Kubernetes API for OCM resources (ManagedCluster, ManagedClusterSet).
+4. **Mock Data Mode**: Supports running with mock data for development via `DASHBOARD_USE_MOCK=true`.
 
 ## Current Features
 
-- Read-only view of clusters
-- Table displaying cluster name, status, version, and nodes
-- Detailed view for individual clusters
-- Authentication flow with token support
-- Preparation for real-time updates via SSE
+- Frontend:
+    - Read-only view of clusters and cluster sets.
+    - Table displaying cluster name, status, version.
+    - Detailed view for individual clusters.
+    - Table displaying cluster set name and cluster count.
+    - Detailed view for individual cluster sets.
+    - Authentication flow with token support (bearer token in localStorage).
+    - UI components for login, cluster list/detail, cluster set list/detail, overview, and layout.
+- Backend:
+    - API endpoints to list and get ManagedClusters and ManagedClusterSets.
+    - SSE endpoint for streaming cluster updates (mock or heartbeat).
+    - Kubernetes client integration using `client-go`.
+    - Support for in-cluster and out-of-cluster kubeconfig.
+    - CORS configured for broad access (e.g. `*`).
+    - Debug mode (`DASHBOARD_DEBUG=true`) and mock data mode (`DASHBOARD_USE_MOCK=true`).
 
 ## Setup & Development
 
@@ -59,14 +73,28 @@ npm run dev
 
 3. Open your browser at the URL shown in the terminal (usually http://localhost:5173)
 
-### Backend Integration (Coming Soon)
+### Backend Development
 
-The frontend is designed to connect to a Go backend that will be implemented in a separate repository. The backend will:
+1. Ensure Go 1.22+ is installed.
+2. Navigate to the `backend` directory:
+   ```bash
+   cd backend
+   ```
+3. Run the backend server (defaults to port 8080):
+   ```bash
+   go run main.go
+   ```
+   Or use the development script:
+   ```bash
+   ./run-dev.sh
+   ```
+   This script sets `DASHBOARD_USE_MOCK=true` and `DASHBOARD_DEBUG=true` by default.
+   Modify `.env.development` or set environment variables directly to change behavior (e.g., `KUBECONFIG` path, `PORT`).
 
-1. Connect to the Kubernetes API using client-go
-2. Authenticate users via TokenReview
-3. Provide RESTful endpoints for listing and viewing clusters
-4. Stream real-time updates using Server-Sent Events
+### Connecting Frontend to Backend
+
+The frontend (`src/api/utils.ts`) is configured to connect to the backend API, typically running on `http://localhost:8080`. Ensure the backend server is running when developing the frontend.
+The `VITE_API_BASE_URL` in `.env.development` (for frontend) should match the backend server address.
 
 ## Building for Production
 
@@ -120,8 +148,9 @@ roleRef:
 
 ## Next Steps
 
-1. Implement the Go backend with real API endpoints
-2. Connect the frontend to the backend
-3. Implement real-time updates using SSE
-4. Create a Helm chart for deployment
-5. Add unit and integration tests
+1. Fully implement real-time updates using SSE with actual Kubernetes informers in the backend.
+2. Implement robust TokenReview authentication in the backend.
+3. Enhance error handling and user feedback in both frontend and backend.
+4. Create a Helm chart for deployment.
+5. Add comprehensive unit and integration tests for both frontend and backend.
+6. Improve UI/UX, potentially adding more visualizations or actions.
