@@ -125,7 +125,7 @@ metadata:
   name: ocm-dashboard-reader
 rules:
   - apiGroups: ["cluster.open-cluster-management.io"]
-    resources: ["managedclusters"]
+    resources: ["managedclusters, managedclustersets"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["authentication.k8s.io"]
     resources: ["tokenreviews"]
