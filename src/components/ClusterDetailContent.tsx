@@ -217,6 +217,25 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
               <Typography variant="body1">-</Typography>
             )}
           </Grid>
+          <Grid size={{ xs: 12 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, mt: 2 }}>
+              Cluster Claims
+            </Typography>
+            {cluster.clusterClaims && cluster.clusterClaims.length > 0 ? (
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {cluster.clusterClaims.map((claim) => (
+                  <Chip
+                    key={claim.name}
+                    label={`${claim.name}: ${claim.value}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body1">-</Typography>
+            )}
+          </Grid>
         </Grid>
       </Box>
 

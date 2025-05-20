@@ -147,8 +147,14 @@ export default function ClusterListPage() {
 
   // Filter clusters based on search term and status filter
   const filteredClusters = clusters.filter(cluster => {
-    const matchesSearch = cluster.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (cluster.labels?.region || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      cluster.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (cluster.labels?.region || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // Search in clusterClaims
+      cluster.clusterClaims?.some(claim =>
+        claim.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        claim.value.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     const matchesStatus = filterStatus === 'all' || cluster.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -218,6 +224,7 @@ export default function ClusterListPage() {
                 <TableCell>Version</TableCell>
                 <TableCell>Hub Accepted</TableCell>
                 <TableCell>Labels</TableCell>
+                <TableCell>Cluster Claims</TableCell>
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     Add-ons
@@ -257,6 +264,22 @@ export default function ClusterListPage() {
                           <Chip
                             key={key}
                             label={`${key}: ${value}`}
+                            size="small"
+                            variant="outlined"
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {cluster.clusterClaims && cluster.clusterClaims.length > 0 ? (
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                        {cluster.clusterClaims.map((claim) => (
+                          <Chip
+                            key={claim.name}
+                            label={`${claim.name}: ${claim.value}`}
                             size="small"
                             variant="outlined"
                           />

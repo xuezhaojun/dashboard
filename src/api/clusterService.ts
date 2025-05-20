@@ -14,6 +14,10 @@ export interface Cluster {
   hubAccepted?: boolean; // Based on spec.hubAcceptsClient or HubAcceptedManagedCluster condition
   capacity?: Record<string, string>; // From status.capacity
   allocatable?: Record<string, string>; // From status.allocatable
+  clusterClaims?: { // From status.clusterClaims
+    name: string;
+    value: string;
+  }[];
   managedClusterClientConfigs?: {
     url: string;
     caBundle?: string;
@@ -67,8 +71,23 @@ export const fetchClusters = async (): Promise<Cluster[]> => {
             labels: {
               vendor: "OpenShift",
               region: "us-east-1",
-              env: "development"
+              env: "development",
+              tier: "gold"
             },
+            clusterClaims: [
+              {
+                name: "usage",
+                value: "dev"
+              },
+              {
+                name: "platform.open-cluster-management.io",
+                value: "AWS"
+              },
+              {
+                name: "product.open-cluster-management.io",
+                value: "OpenShift"
+              }
+            ],
             managedClusterClientConfigs: [
               {
                 url: "https://cluster1-control-plane:6443",
@@ -111,8 +130,23 @@ export const fetchClusters = async (): Promise<Cluster[]> => {
             labels: {
               vendor: "OpenShift",
               region: "us-west-1",
-              env: "staging"
+              env: "staging",
+              tier: "silver"
             },
+            clusterClaims: [
+              {
+                name: "usage",
+                value: "staging"
+              },
+              {
+                name: "platform.open-cluster-management.io",
+                value: "GCP"
+              },
+              {
+                name: "product.open-cluster-management.io",
+                value: "OpenShift"
+              }
+            ],
             managedClusterClientConfigs: [
               {
                 url: "https://cluster2-control-plane:6443",
@@ -185,6 +219,20 @@ export const fetchClusterByName = async (name: string): Promise<Cluster | null> 
               env: "development",
               tier: "gold"
             },
+            clusterClaims: [
+              {
+                name: "usage",
+                value: "dev"
+              },
+              {
+                name: "platform.open-cluster-management.io",
+                value: "AWS"
+              },
+              {
+                name: "product.open-cluster-management.io",
+                value: "OpenShift"
+              }
+            ],
             managedClusterClientConfigs: [
               {
                 url: "https://cluster1-control-plane:6443",
@@ -238,6 +286,20 @@ export const fetchClusterByName = async (name: string): Promise<Cluster | null> 
               env: "staging",
               tier: "silver"
             },
+            clusterClaims: [
+              {
+                name: "usage",
+                value: "staging"
+              },
+              {
+                name: "platform.open-cluster-management.io",
+                value: "GCP"
+              },
+              {
+                name: "product.open-cluster-management.io",
+                value: "OpenShift"
+              }
+            ],
             managedClusterClientConfigs: [
               {
                 url: "https://cluster2-control-plane:6443",
