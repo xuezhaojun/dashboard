@@ -1,13 +1,17 @@
 import { Box, Typography, Paper, Grid, alpha, useTheme } from "@mui/material"
-import { CheckCircle as CheckCircleIcon, Storage as StorageIcon } from "@mui/icons-material"
+import { Storage as StorageIcon, Layers as LayersIcon } from "@mui/icons-material"
 import { useEffect, useState } from "react"
 import { fetchClusters } from "../api/clusterService"
+import { fetchClusterSets } from "../api/clusterSetService"
 import type { Cluster } from "../api/clusterService"
+import type { ClusterSet } from "../api/clusterSetService"
 
 export default function OverviewPage() {
   const theme = useTheme()
   const [clusters, setClusters] = useState<Cluster[]>([])
+  const [clusterSets, setClusterSets] = useState<ClusterSet[]>([])
   const [loading, setLoading] = useState(true)
+  const [clusterSetsLoading, setClusterSetsLoading] = useState(true)
 
   useEffect(() => {
     const loadClusters = async () => {
@@ -22,10 +26,24 @@ export default function OverviewPage() {
     loadClusters()
   }, [])
 
+  useEffect(() => {
+    const loadClusterSets = async () => {
+      setClusterSetsLoading(true)
+      try {
+        const data = await fetchClusterSets()
+        setClusterSets(data)
+      } finally {
+        setClusterSetsLoading(false)
+      }
+    }
+    loadClusterSets()
+  }, [])
+
   // Calculate stats from real data
   const total = clusters.length
   // 只使用"Online"状态作为可用集群的判断标准
   const available = clusters.filter(c => c.status === "Online").length
+  const totalClusterSets = clusterSets.length
 
   return (
     <Box sx={{ p: 3 }}>
@@ -35,7 +53,7 @@ export default function OverviewPage() {
 
       {/* Simplified KPI cards */}
       <Grid container spacing={3} sx={{ width: '100%' }}>
-        {/* All clusters card */}
+        {/* Combined Clusters card */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Paper
             sx={{
@@ -61,51 +79,23 @@ export default function OverviewPage() {
               >
                 <StorageIcon sx={{ color: "primary.main", fontSize: 24 }} />
               </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  All Clusters
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: "medium" }}>
-                  {loading ? "-" : total}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* Available clusters card */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper
-            sx={{
-              p: 3,
-              height: "100%",
-              borderRadius: 2,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 48,
-                  height: 48,
-                  borderRadius: 2,
-                  bgcolor: alpha(theme.palette.success.main, 0.1),
-                  mr: 2,
-                }}
-              >
-                <CheckCircleIcon sx={{ color: "success.main", fontSize: 24 }} />
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Available Clusters
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: "medium" }}>
-                  {loading ? "-" : available}
-                </Typography>
+              <Box sx={{ display: "flex", alignItems: "flex-end" }}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    All Clusters
+                  </Typography>
+                  <Typography variant="h3" sx={{ fontWeight: "medium" }}>
+                    {loading ? "-" : total}
+                  </Typography>
+                </Box>
+                <Box sx={{ ml: 4 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Available
+                  </Typography>
+                  <Typography variant="h3" sx={{ fontWeight: "medium", color: "success.main" }}>
+                    {loading ? "-" : available}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
 
@@ -146,6 +136,84 @@ export default function OverviewPage() {
                 {loading ? '-' : total - available} clusters currently unavailable
               </Typography>
             </Box>
+          </Paper>
+        </Grid>
+
+        {/* ManagedClusterSets card */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper
+            sx={{
+              p: 3,
+              height: "100%",
+              borderRadius: 2,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 48,
+                  height: 48,
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.info.main, 0.1),
+                  mr: 2,
+                }}
+              >
+                <LayersIcon sx={{ color: "info.main", fontSize: 24 }} />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  ManagedClusterSets
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: "medium" }}>
+                  {clusterSetsLoading ? "-" : totalClusterSets}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Cluster distribution
+            </Typography>
+
+            {!clusterSetsLoading && clusterSets.length > 0 && (
+              <Box sx={{ mt: "auto" }}>
+                {clusterSets.slice(0, 3).map((set) => (
+                  <Box key={set.id} sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                    <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {set.name}
+                    </Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {set.clusterCount} clusters
+                    </Typography>
+                  </Box>
+                ))}
+                {clusterSets.length > 3 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: 1 }}>
+                    + {clusterSets.length - 3} more sets
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            {clusterSetsLoading && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Loading cluster sets...
+                </Typography>
+              </Box>
+            )}
+
+            {!clusterSetsLoading && clusterSets.length === 0 && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No cluster sets found
+                </Typography>
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>

@@ -232,7 +232,13 @@ export default function ClusterListPage() {
                   key={cluster.id}
                   hover
                   selected={selectedClusterId === cluster.id}
-                  sx={{ cursor: "pointer" }}
+                  sx={{
+                    cursor: "pointer",
+                    py: 1.5,
+                    '& > td': {
+                      padding: '12px 16px',
+                    }
+                  }}
                   onClick={() => handleClusterSelect(cluster.id)}
                 >
                   <TableCell>{cluster.name}</TableCell>
