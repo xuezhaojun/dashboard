@@ -10,11 +10,17 @@ import {
   TableRow,
   Chip,
   Button,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
+  Extension as ExtensionIcon,
 } from '@mui/icons-material';
 import type { Cluster } from '../api/clusterService';
+import { useState } from 'react';
+import ClusterAddonsList from './ClusterAddonsList';
+import { useClusterAddons } from '../hooks/useClusterAddons';
 
 interface ClusterDetailContentProps {
   cluster: Cluster;
@@ -63,11 +69,50 @@ const formatResourceSize = (value: string | undefined): string => {
   }
 };
 
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+      style={{ height: index === 1 ? 'calc(100% - 48px)' : 'auto' }}
+    >
+      {value === index && (
+        <Box sx={{ pt: 3, height: '100%' }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
+  };
+}
+
 export default function ClusterDetailContent({ cluster, compact = false }: ClusterDetailContentProps) {
+  const [tabValue, setTabValue] = useState(0);
+  const { addons, loading, error } = useClusterAddons(cluster.name);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
   // Get status text
   const getStatusText = (status: string) => {
-    // 直接返回状态值，不再进行转换
     return status;
   };
 
@@ -77,10 +122,41 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
     return new Date(dateString).toLocaleString('en-US');
   };
 
-  return (
+    return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Basic information */}
-      <Box sx={{ mb: 3 }}>
+      {!compact && (
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            aria-label="cluster detail tabs"
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <span>Overview</span>
+                </Box>
+              }
+              {...a11yProps(0)}
+            />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <ExtensionIcon sx={{ mr: 0.5, fontSize: '1.1rem' }} />
+                  <span>Add-ons {addons.length > 0 && `(${addons.length})`}</span>
+                </Box>
+              }
+              {...a11yProps(1)}
+            />
+          </Tabs>
+        </Box>
+      )}
+
+      <TabPanel value={tabValue} index={0}>
+        {/* Basic information */}
+        <Box sx={{ mb: 3 }}>
         <Grid container spacing={2} sx={{ width: '100%' }}>
           <Grid size={{ xs: 6, sm: 6 }}>
             <Typography variant="body2" color="text.secondary">
@@ -277,6 +353,15 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
           </Button>
         </Box>
       )}
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={1}>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+            <ClusterAddonsList addons={addons} loading={loading} error={error} />
+          </Box>
+        </Box>
+      </TabPanel>
     </Box>
   );
 }

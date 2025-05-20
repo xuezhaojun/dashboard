@@ -60,7 +60,6 @@ const navItems = [
   { text: 'Clusters', icon: <StorageIcon />, path: '/clusters' },
   { text: 'Clustersets', icon: <LayersIcon />, path: '/clustersets' },
   { text: 'Placements', icon: <DeviceHubIcon />, path: '/placements' },
-  { text: 'Add-ons', icon: <ExtensionIcon />, path: '/addons' },
 ];
 
 export default function Drawer({ open, drawerWidth, onDrawerToggle }: DrawerProps) {
