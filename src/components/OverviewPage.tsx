@@ -1,17 +1,21 @@
 import { Box, Typography, Paper, Grid, alpha, useTheme } from "@mui/material"
-import { Storage as StorageIcon, Layers as LayersIcon } from "@mui/icons-material"
+import { Storage as StorageIcon, Layers as LayersIcon, DeviceHub as DeviceHubIcon } from "@mui/icons-material"
 import { useEffect, useState } from "react"
 import { fetchClusters } from "../api/clusterService"
 import { fetchClusterSets } from "../api/clusterSetService"
+import { fetchPlacements } from "../api/placementService"
 import type { Cluster } from "../api/clusterService"
 import type { ClusterSet } from "../api/clusterSetService"
+import type { Placement } from "../api/placementService"
 
 export default function OverviewPage() {
   const theme = useTheme()
   const [clusters, setClusters] = useState<Cluster[]>([])
   const [clusterSets, setClusterSets] = useState<ClusterSet[]>([])
+  const [placements, setPlacements] = useState<Placement[]>([])
   const [loading, setLoading] = useState(true)
   const [clusterSetsLoading, setClusterSetsLoading] = useState(true)
+  const [placementsLoading, setPlacementsLoading] = useState(true)
 
   useEffect(() => {
     const loadClusters = async () => {
@@ -39,11 +43,26 @@ export default function OverviewPage() {
     loadClusterSets()
   }, [])
 
+  useEffect(() => {
+    const loadPlacements = async () => {
+      setPlacementsLoading(true)
+      try {
+        const data = await fetchPlacements()
+        setPlacements(data)
+      } finally {
+        setPlacementsLoading(false)
+      }
+    }
+    loadPlacements()
+  }, [])
+
   // Calculate stats from real data
   const total = clusters.length
   // 只使用"Online"状态作为可用集群的判断标准
   const available = clusters.filter(c => c.status === "Online").length
   const totalClusterSets = clusterSets.length
+  const totalPlacements = placements.length
+  const successfulPlacements = placements.filter(p => p.succeeded).length
 
   return (
     <Box sx={{ p: 3 }}>
@@ -54,7 +73,7 @@ export default function OverviewPage() {
       {/* Simplified KPI cards */}
       <Grid container spacing={3} sx={{ width: '100%' }}>
         {/* Combined Clusters card */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper
             sx={{
               p: 3,
@@ -140,7 +159,7 @@ export default function OverviewPage() {
         </Grid>
 
         {/* ManagedClusterSets card */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper
             sx={{
               p: 3,
@@ -214,6 +233,92 @@ export default function OverviewPage() {
                 </Typography>
               </Box>
             )}
+          </Paper>
+        </Grid>
+
+        {/* Placements card */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper
+            sx={{
+              p: 3,
+              height: "100%",
+              borderRadius: 2,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 48,
+                  height: 48,
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.success.main, 0.1),
+                  mr: 2,
+                }}
+              >
+                <DeviceHubIcon sx={{ color: "success.main", fontSize: 24 }} />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "flex-end" }}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    All Placements
+                  </Typography>
+                  <Typography variant="h3" sx={{ fontWeight: "medium" }}>
+                    {placementsLoading ? "-" : totalPlacements}
+                  </Typography>
+                </Box>
+                <Box sx={{ ml: 4 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Successful
+                  </Typography>
+                  <Typography variant="h3" sx={{ fontWeight: "medium", color: "success.main" }}>
+                    {placementsLoading ? "-" : successfulPlacements}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Success Rate
+            </Typography>
+
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Box
+                sx={{
+                  height: 8,
+                  width: "100%",
+                  bgcolor: alpha(theme.palette.success.main, 0.1),
+                  borderRadius: 4,
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    height: "100%",
+                    width: totalPlacements > 0 ? `${(successfulPlacements / totalPlacements) * 100}%` : 0,
+                    bgcolor: "success.main",
+                    borderRadius: 4,
+                  }}
+                />
+              </Box>
+              <Typography variant="body2" fontWeight="medium" sx={{ ml: 2, minWidth: 40 }}>
+                {placementsLoading || totalPlacements === 0 ? '-' : Math.round((successfulPlacements / totalPlacements) * 100)}%
+              </Typography>
+            </Box>
+
+            <Box sx={{ mt: "auto" }}>
+              <Typography variant="body2" color="text.secondary">
+                {placementsLoading ? '-' : totalPlacements - successfulPlacements} placements currently pending or failed
+              </Typography>
+            </Box>
           </Paper>
         </Grid>
       </Grid>
