@@ -10,7 +10,6 @@ import ClusterListPage from './components/ClusterListPage';
 import ClustersetList from './components/ClustersetList';
 import ClustersetDetail from './components/ClustersetDetail';
 import PlacementListPage from './components/PlacementListPage';
-import PlacementDetailPage from './components/PlacementDetailPage';
 import { MuiThemeProvider } from './theme/ThemeProvider';
 
 // Protected route component that redirects to login if not authenticated
@@ -49,7 +48,6 @@ function AppContent() {
           <Route path="clusters" element={<ClusterListPage />} />
           <Route path="clusters/:name" element={<ClusterDetailPage />} />
           <Route path="placements" element={<PlacementListPage />} />
-          <Route path="placements/:namespace/:name" element={<PlacementDetailPage />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
           <Route path="clustersets" element={<ClustersetList />} />
           <Route path="clustersets/:name" element={<ClustersetDetail />} />

@@ -97,7 +97,8 @@ export interface Placement {
   }[];
 
   // Calculated fields
-  satisfied: boolean;
+  satisfied?: boolean; // Deprecated: use the `succeeded` property instead
+  succeeded: boolean; // Based on PlacementSatisfied condition status
   reasonMessage?: string;
   selectedClusters?: Cluster[];
   decisions?: PlacementDecision[];
@@ -118,6 +119,14 @@ const createHeaders = (): HeadersInit => {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
+};
+
+// Helper to determine if a placement is succeeded based on PlacementSatisfied condition
+const determineSucceededStatus = (conditions?: { type: string; status: string }[]): boolean => {
+  if (!conditions || conditions.length === 0) return false;
+
+  const satisfiedCondition = conditions.find(c => c.type === 'PlacementSatisfied');
+  return satisfiedCondition?.status === 'True';
 };
 
 // Fetch all placements
@@ -179,7 +188,8 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                 lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
-            satisfied: true
+            satisfied: true,
+            succeeded: true
           },
           {
             id: "a5ca7369-0740-4b26-a8d5-77a097a3cfc9",
@@ -225,7 +235,8 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                 lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
-            satisfied: true
+            satisfied: true,
+            succeeded: true
           },
           {
             id: "0d39b430-8a78-46e1-b6fc-62b091196703",
@@ -266,7 +277,8 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                 lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
-            satisfied: true
+            satisfied: true,
+            succeeded: true
           },
           {
             id: "bcfd62a3-43a3-4717-9fce-3455631bbe82",
@@ -309,7 +321,8 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                 lastTransitionTime: "2025-05-20T08:52:35Z"
               }
             ],
-            satisfied: true
+            satisfied: true,
+            succeeded: true
           }
         ]);
       }, 800);
@@ -325,7 +338,13 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    return await response.json();
+    const placements = await response.json();
+
+    // Add succeeded status to each placement based on the PlacementSatisfied condition
+    return placements.map((placement: Placement) => ({
+      ...placement,
+      succeeded: determineSucceededStatus(placement.conditions)
+    }));
   } catch (error) {
     console.error('Error fetching placements:', error);
     return [];
@@ -367,6 +386,23 @@ export const fetchPlacementByName = async (
 
         if (actualName === "placement-label-claim" && actualNamespace === "default") {
           console.log(`Returning mock data for ${actualNamespace}/${actualName}`);
+          const conditions = [
+              {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
+              }
+            ];
+
           resolve({
             id: "dd1845a6-4913-48ea-8784-24bf2fb1edf0",
             name: "placement-label-claim",
@@ -403,23 +439,9 @@ export const fetchPlacementByName = async (
                 clusterCount: 1
               }
             ],
-            conditions: [
-              {
-                type: "PlacementMisconfigured",
-                status: "False",
-                reason: "Succeedconfigured",
-                message: "Placement configurations check pass",
-                lastTransitionTime: "2025-05-20T13:42:49Z"
-              },
-              {
-                type: "PlacementSatisfied",
-                status: "True",
-                reason: "AllDecisionsScheduled",
-                message: "All cluster decisions scheduled",
-                lastTransitionTime: "2025-05-20T13:51:37Z"
-              }
-            ],
+            conditions,
             satisfied: true,
+            succeeded: determineSucceededStatus(conditions),
             selectedClusters: [
               {
                 id: "mock-cluster-1",
@@ -441,6 +463,23 @@ export const fetchPlacementByName = async (
             ]
           });
         } else if (actualName === "placement-priority" && actualNamespace === "default") {
+          const priorityConditions = [
+              {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
+              }
+            ];
+
           resolve({
             id: "a5ca7369-0740-4b26-a8d5-77a097a3cfc9",
             name: "placement-priority",
@@ -469,23 +508,9 @@ export const fetchPlacementByName = async (
                 clusterCount: 1
               }
             ],
-            conditions: [
-              {
-                type: "PlacementMisconfigured",
-                status: "False",
-                reason: "Succeedconfigured",
-                message: "Placement configurations check pass",
-                lastTransitionTime: "2025-05-20T13:42:49Z"
-              },
-              {
-                type: "PlacementSatisfied",
-                status: "True",
-                reason: "AllDecisionsScheduled",
-                message: "All cluster decisions scheduled",
-                lastTransitionTime: "2025-05-20T13:51:37Z"
-              }
-            ],
+            conditions: priorityConditions,
             satisfied: true,
+            succeeded: determineSucceededStatus(priorityConditions),
             selectedClusters: [
               {
                 id: "mock-cluster-2",
@@ -507,6 +532,23 @@ export const fetchPlacementByName = async (
             ]
           });
         } else if (actualName === "placement-tolerations" && actualNamespace === "default") {
+          const tolerationsConditions = [
+              {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
+              }
+            ];
+
           resolve({
             id: "0d39b430-8a78-46e1-b6fc-62b091196703",
             name: "placement-tolerations",
@@ -530,23 +572,9 @@ export const fetchPlacementByName = async (
                 clusterCount: 2
               }
             ],
-            conditions: [
-              {
-                type: "PlacementMisconfigured",
-                status: "False",
-                reason: "Succeedconfigured",
-                message: "Placement configurations check pass",
-                lastTransitionTime: "2025-05-20T13:42:49Z"
-              },
-              {
-                type: "PlacementSatisfied",
-                status: "True",
-                reason: "AllDecisionsScheduled",
-                message: "All cluster decisions scheduled",
-                lastTransitionTime: "2025-05-20T13:51:37Z"
-              }
-            ],
+            conditions: tolerationsConditions,
             satisfied: true,
+            succeeded: determineSucceededStatus(tolerationsConditions),
             selectedClusters: [
               {
                 id: "mock-cluster-3",
@@ -577,6 +605,23 @@ export const fetchPlacementByName = async (
             ]
           });
         } else if (actualName === "global" && actualNamespace === "open-cluster-management-addon") {
+          const globalConditions = [
+              {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T08:52:35Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T08:52:35Z"
+              }
+            ];
+
           resolve({
             id: "bcfd62a3-43a3-4717-9fce-3455631bbe82",
             name: "global",
@@ -602,23 +647,9 @@ export const fetchPlacementByName = async (
                 clusterCount: 2
               }
             ],
-            conditions: [
-              {
-                type: "PlacementMisconfigured",
-                status: "False",
-                reason: "Succeedconfigured",
-                message: "Placement configurations check pass",
-                lastTransitionTime: "2025-05-20T08:52:35Z"
-              },
-              {
-                type: "PlacementSatisfied",
-                status: "True",
-                reason: "AllDecisionsScheduled",
-                message: "All cluster decisions scheduled",
-                lastTransitionTime: "2025-05-20T08:52:35Z"
-              }
-            ],
+            conditions: globalConditions,
             satisfied: true,
+            succeeded: determineSucceededStatus(globalConditions),
             selectedClusters: [
               {
                 id: "mock-cluster-5",
@@ -664,7 +695,13 @@ export const fetchPlacementByName = async (
       throw new Error(`API error: ${response.status}`);
     }
 
-    return await response.json();
+    const placement = await response.json();
+
+    // Add succeeded status based on the PlacementSatisfied condition
+    return {
+      ...placement,
+      succeeded: determineSucceededStatus(placement.conditions)
+    };
   } catch (error) {
     console.error(`Error fetching placement ${actualNamespace}/${actualName}:`, error);
     return null;

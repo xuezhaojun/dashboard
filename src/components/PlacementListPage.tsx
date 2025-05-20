@@ -5,7 +5,6 @@ import {
   Typography,
   Paper,
   Chip,
-  Button,
   IconButton,
   TextField,
   InputAdornment,
@@ -29,7 +28,6 @@ import {
   Refresh as RefreshIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
-  Launch as LaunchIcon,
 } from "@mui/icons-material";
 import { fetchPlacements } from '../api/placementService';
 import type { Placement } from '../api/placementService';
@@ -88,15 +86,11 @@ export default function PlacementListPage() {
     setSearchParams({});
   };
 
-  const handleViewFullDetails = () => {
-    if (selectedPlacementId && selectedPlacementData) {
-      navigate(`/placements/${selectedPlacementData.namespace}/${selectedPlacementData.name}`);
-    }
-  };
+  // No longer need to navigate to detailed page
 
-  // Get status icon based on satisfied condition
-  const getStatusIcon = (satisfied: boolean) => {
-    return satisfied ? (
+  // Get status icon based on succeeded condition
+  const getStatusIcon = (succeeded: boolean) => {
+    return succeeded ? (
       <CheckCircleIcon sx={{ color: "success.main" }} />
     ) : (
       <ErrorIcon sx={{ color: "error.main" }} />
@@ -111,17 +105,17 @@ export default function PlacementListPage() {
 
     const matchesStatus =
       filterStatus === 'all' ||
-      (filterStatus === 'satisfied' && placement.satisfied) ||
-      (filterStatus === 'unsatisfied' && !placement.satisfied);
+      (filterStatus === 'succeeded' && placement.succeeded) ||
+      (filterStatus === 'not-succeeded' && !placement.succeeded);
 
     return matchesSearch && matchesStatus;
   });
 
   const placementStatusText = (placement: Placement) => {
-    if (placement.satisfied) {
-      return "Satisfied";
+    if (placement.succeeded) {
+      return "Succeeded";
     } else {
-      return placement.reasonMessage || "Unsatisfied";
+      return placement.reasonMessage || "Not Succeeded";
     }
   };
 
@@ -165,8 +159,8 @@ export default function PlacementListPage() {
                 <InputLabel id="filter-status-label">Status</InputLabel>
                 <Select labelId="filter-status-label" value={filterStatus} label="Status" onChange={handleFilterStatusChange}>
                   <MenuItem value="all">All Statuses</MenuItem>
-                  <MenuItem value="satisfied">Satisfied</MenuItem>
-                  <MenuItem value="unsatisfied">Unsatisfied</MenuItem>
+                  <MenuItem value="succeeded">Succeeded</MenuItem>
+                  <MenuItem value="not-succeeded">Not Succeeded</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -227,7 +221,7 @@ export default function PlacementListPage() {
                       <TableCell>{placement.namespace}</TableCell>
                       <TableCell>
                         <Box sx={{ display: "flex", alignItems: "center" }}>
-                          {getStatusIcon(placement.satisfied)}
+                          {getStatusIcon(!!placement.succeeded)}
                           <Typography variant="body2" sx={{ ml: 1 }}>
                             {placementStatusText(placement)}
                           </Typography>
@@ -275,15 +269,7 @@ export default function PlacementListPage() {
           title={`${selectedPlacementData.namespace}/${selectedPlacementData.name}`}
           onClose={handleCloseDetail}
         >
-          <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-start" }}>
-            <Button
-              variant="contained"
-              onClick={handleViewFullDetails}
-              endIcon={<LaunchIcon />}
-            >
-              View Full Details
-            </Button>
-          </Box>
+
 
           {/* Basic Placement Info */}
           <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
@@ -294,7 +280,7 @@ export default function PlacementListPage() {
             <Box sx={{ display: "flex", mb: 1 }}>
               <Typography variant="subtitle2" sx={{ width: 160 }}>Status:</Typography>
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                {getStatusIcon(selectedPlacementData.satisfied)}
+                {getStatusIcon(!!selectedPlacementData.succeeded)}
                 <Typography variant="body2" sx={{ ml: 1 }}>
                   {placementStatusText(selectedPlacementData)}
                 </Typography>
