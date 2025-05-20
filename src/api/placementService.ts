@@ -128,62 +128,12 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
       setTimeout(() => {
         resolve([
           {
-            id: "placement-1",
-            name: "placement-1",
+            id: "dd1845a6-4913-48ea-8784-24bf2fb1edf0",
+            name: "placement-label-claim",
             namespace: "default",
-            creationTimestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-            clusterSets: ["global"],
-            numberOfClusters: 3,
-            numberOfSelectedClusters: 3,
-            predicates: [
-              {
-                requiredClusterSelector: {
-                  labelSelector: {
-                    matchLabels: {
-                      "env": "production"
-                    }
-                  }
-                }
-              }
-            ],
-            prioritizerPolicy: {
-              mode: "Additive",
-              configurations: [
-                {
-                  scoreCoordinate: {
-                    type: "BuiltIn",
-                    builtIn: "ResourceAllocatableMemory",
-                  },
-                  weight: 2
-                }
-              ]
-            },
-            decisionGroups: [
-              {
-                decisionGroupIndex: 0,
-                decisionGroupName: "",
-                decisions: ["placement-1-decision-1"],
-                clusterCount: 3
-              }
-            ],
-            conditions: [
-              {
-                type: "PlacementSatisfied",
-                status: "True",
-                reason: "PlacementSatisfied",
-                message: "Placement requirements are satisfied",
-                lastTransitionTime: new Date().toISOString()
-              }
-            ],
-            satisfied: true
-          },
-          {
-            id: "placement-2",
-            name: "placement-2",
-            namespace: "default",
-            creationTimestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            clusterSets: ["east", "west"],
-            numberOfClusters: 2,
+            creationTimestamp: "2025-05-20T13:42:49Z",
+            clusterSets: ["default"],
+            numberOfClusters: 1,
             numberOfSelectedClusters: 1,
             predicates: [
               {
@@ -191,11 +141,16 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                   claimSelector: {
                     matchExpressions: [
                       {
-                        key: "platform.open-cluster-management.io",
+                        key: "usage",
                         operator: "In",
-                        values: ["AWS"]
+                        values: ["dev"]
                       }
                     ]
+                  },
+                  labelSelector: {
+                    matchLabels: {
+                      "feature.open-cluster-management.io/addon-managed-serviceaccount": "available"
+                    }
                   }
                 }
               }
@@ -204,85 +159,154 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
               {
                 decisionGroupIndex: 0,
                 decisionGroupName: "",
-                decisions: ["placement-2-decision-1"],
+                decisions: ["placement-label-claim-decision-1"],
                 clusterCount: 1
               }
             ],
             conditions: [
               {
-                type: "PlacementSatisfied",
+                type: "PlacementMisconfigured",
                 status: "False",
-                reason: "NotEnoughClusters",
-                message: "Not enough clusters match the placement requirements",
-                lastTransitionTime: new Date().toISOString()
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
-            satisfied: false,
-            reasonMessage: "Not enough clusters match the placement requirements"
+            satisfied: true
           },
           {
-            id: "placement-3",
-            name: "placement-3",
-            namespace: "app-team-1",
-            creationTimestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            clusterSets: ["global"],
-            numberOfSelectedClusters: 2,
-            predicates: [
-              {
-                requiredClusterSelector: {
-                  celSelector: {
-                    celExpressions: [
-                      "managedCluster.status.version.kubernetes == \"v1.31.0\""
-                    ]
-                  }
+            id: "a5ca7369-0740-4b26-a8d5-77a097a3cfc9",
+            name: "placement-priority",
+            namespace: "default",
+            creationTimestamp: "2025-05-20T13:42:49Z",
+            clusterSets: [],
+            numberOfClusters: 1,
+            numberOfSelectedClusters: 1,
+            prioritizerPolicy: {
+              mode: "Additive",
+              configurations: [
+                {
+                  scoreCoordinate: {
+                    type: "BuiltIn",
+                    builtIn: "ResourceAllocatableMemory"
+                  },
+                  weight: 1
                 }
-              }
-            ],
-            tolerations: [
-              {
-                key: "gpu",
-                value: "true",
-                operator: "Equal"
-              }
-            ],
-            decisionStrategy: {
-              groupStrategy: {
-                decisionGroups: [
-                  {
-                    groupName: "canary",
-                    groupClusterSelector: {
-                      labelSelector: {
-                        matchLabels: {
-                          "canary": "true"
-                        }
-                      }
-                    }
-                  }
-                ],
-                clustersPerDecisionGroup: "50%"
-              }
+              ]
             },
             decisionGroups: [
               {
                 decisionGroupIndex: 0,
-                decisionGroupName: "canary",
-                decisions: ["placement-3-decision-1"],
-                clusterCount: 1
-              },
-              {
-                decisionGroupIndex: 1,
                 decisionGroupName: "",
-                decisions: ["placement-3-decision-2"],
+                decisions: ["placement-priority-decision-1"],
                 clusterCount: 1
               }
             ],
             conditions: [
               {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
                 type: "PlacementSatisfied",
                 status: "True",
-                reason: "PlacementSatisfied",
-                message: "Placement requirements are satisfied",
-                lastTransitionTime: new Date().toISOString()
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
+              }
+            ],
+            satisfied: true
+          },
+          {
+            id: "0d39b430-8a78-46e1-b6fc-62b091196703",
+            name: "placement-tolerations",
+            namespace: "default",
+            creationTimestamp: "2025-05-20T13:42:49Z",
+            clusterSets: [],
+            numberOfSelectedClusters: 2,
+            tolerations: [
+              {
+                key: "gpu",
+                value: "true",
+                operator: "Equal",
+                tolerationSeconds: 300
+              }
+            ],
+            decisionGroups: [
+              {
+                decisionGroupIndex: 0,
+                decisionGroupName: "",
+                decisions: ["placement-tolerations-decision-1"],
+                clusterCount: 2
+              }
+            ],
+            conditions: [
+              {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
+              }
+            ],
+            satisfied: true
+          },
+          {
+            id: "bcfd62a3-43a3-4717-9fce-3455631bbe82",
+            name: "global",
+            namespace: "open-cluster-management-addon",
+            creationTimestamp: "2025-05-20T08:52:35Z",
+            clusterSets: ["global"],
+            numberOfSelectedClusters: 2,
+            tolerations: [
+              {
+                key: "cluster.open-cluster-management.io/unreachable",
+                operator: "Equal"
+              },
+              {
+                key: "cluster.open-cluster-management.io/unavailable",
+                operator: "Equal"
+              }
+            ],
+            decisionGroups: [
+              {
+                decisionGroupIndex: 0,
+                decisionGroupName: "",
+                decisions: ["global-decision-1"],
+                clusterCount: 2
+              }
+            ],
+            conditions: [
+              {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T08:52:35Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T08:52:35Z"
               }
             ],
             satisfied: true
@@ -313,57 +337,86 @@ export const fetchPlacementByName = async (
   namespace: string,
   name: string
 ): Promise<Placement | null> => {
+  console.log(`API fetchPlacementByName called with namespace=${namespace}, name=${name}`);
+
+  // Handle the case where URL parameters might include namespace
+  let actualNamespace = namespace;
+  let actualName = name;
+
+  // Check if name contains a slash, which means it might be in "namespace/name" format
+  // But avoid re-parsing if it has already been processed in the component
+  if (!namespace.includes('_PARSED_') && name && name.includes('/')) {
+    const parts = name.split('/');
+    if (parts.length === 2) {
+      actualNamespace = parts[0];
+      actualName = parts[1];
+      console.log(`Parsed name from URL: namespace=${actualNamespace}, name=${actualName}`);
+    }
+  }
+
+  // Remove marker
+  if (actualNamespace.includes('_PARSED_')) {
+    actualNamespace = actualNamespace.replace('_PARSED_', '');
+  }
+
   // Use mock data in development mode unless specifically requested to use real API
   if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        if (name === "placement-1" && namespace === "default") {
+        console.log(`Checking mock data for ${actualNamespace}/${actualName}`);
+
+        if (actualName === "placement-label-claim" && actualNamespace === "default") {
+          console.log(`Returning mock data for ${actualNamespace}/${actualName}`);
           resolve({
-            id: "placement-1",
-            name: "placement-1",
+            id: "dd1845a6-4913-48ea-8784-24bf2fb1edf0",
+            name: "placement-label-claim",
             namespace: "default",
-            creationTimestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-            clusterSets: ["global"],
-            numberOfClusters: 3,
-            numberOfSelectedClusters: 3,
+            creationTimestamp: "2025-05-20T13:42:49Z",
+            clusterSets: ["default"],
+            numberOfClusters: 1,
+            numberOfSelectedClusters: 1,
             predicates: [
               {
                 requiredClusterSelector: {
+                  claimSelector: {
+                    matchExpressions: [
+                      {
+                        key: "usage",
+                        operator: "In",
+                        values: ["dev"]
+                      }
+                    ]
+                  },
                   labelSelector: {
                     matchLabels: {
-                      "env": "production"
+                      "feature.open-cluster-management.io/addon-managed-serviceaccount": "available"
                     }
                   }
                 }
               }
             ],
-            prioritizerPolicy: {
-              mode: "Additive",
-              configurations: [
-                {
-                  scoreCoordinate: {
-                    type: "BuiltIn",
-                    builtIn: "ResourceAllocatableMemory",
-                  },
-                  weight: 2
-                }
-              ]
-            },
             decisionGroups: [
               {
                 decisionGroupIndex: 0,
                 decisionGroupName: "",
-                decisions: ["placement-1-decision-1"],
-                clusterCount: 3
+                decisions: ["placement-label-claim-decision-1"],
+                clusterCount: 1
               }
             ],
             conditions: [
               {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
                 type: "PlacementSatisfied",
                 status: "True",
-                reason: "PlacementSatisfied",
-                message: "Placement requirements are satisfied",
-                lastTransitionTime: new Date().toISOString()
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
             satisfied: true,
@@ -372,166 +425,125 @@ export const fetchPlacementByName = async (
                 id: "mock-cluster-1",
                 name: "mock-cluster-1",
                 status: "Online",
-              },
-              {
-                id: "mock-cluster-2",
-                name: "mock-cluster-2",
-                status: "Offline",
-              },
-              {
-                id: "mock-cluster-3",
-                name: "mock-cluster-3",
-                status: "Online",
               }
             ],
             decisions: [
               {
-                name: "placement-1-decision-1",
+                name: "placement-label-claim-decision-1",
                 namespace: "default",
                 decisions: [
                   {
                     clusterName: "mock-cluster-1",
-                    reason: "Selected by placement"
-                  },
-                  {
-                    clusterName: "mock-cluster-2",
-                    reason: "Selected by placement"
-                  },
-                  {
-                    clusterName: "mock-cluster-3",
                     reason: "Selected by placement"
                   }
                 ]
               }
             ]
           });
-        } else if (name === "placement-2" && namespace === "default") {
+        } else if (actualName === "placement-priority" && actualNamespace === "default") {
           resolve({
-            id: "placement-2",
-            name: "placement-2",
+            id: "a5ca7369-0740-4b26-a8d5-77a097a3cfc9",
+            name: "placement-priority",
             namespace: "default",
-            creationTimestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            clusterSets: ["east", "west"],
-            numberOfClusters: 2,
+            creationTimestamp: "2025-05-20T13:42:49Z",
+            clusterSets: [],
+            numberOfClusters: 1,
             numberOfSelectedClusters: 1,
-            predicates: [
-              {
-                requiredClusterSelector: {
-                  claimSelector: {
-                    matchExpressions: [
-                      {
-                        key: "platform.open-cluster-management.io",
-                        operator: "In",
-                        values: ["AWS"]
-                      }
-                    ]
-                  }
+            prioritizerPolicy: {
+              mode: "Additive",
+              configurations: [
+                {
+                  scoreCoordinate: {
+                    type: "BuiltIn",
+                    builtIn: "ResourceAllocatableMemory"
+                  },
+                  weight: 1
                 }
-              }
-            ],
-            decisionGroups: [
-              {
-                decisionGroupIndex: 0,
-                decisionGroupName: "",
-                decisions: ["placement-2-decision-1"],
-                clusterCount: 1
-              }
-            ],
-            conditions: [
-              {
-                type: "PlacementSatisfied",
-                status: "False",
-                reason: "NotEnoughClusters",
-                message: "Not enough clusters match the placement requirements",
-                lastTransitionTime: new Date().toISOString()
-              }
-            ],
-            satisfied: false,
-            reasonMessage: "Not enough clusters match the placement requirements",
-            selectedClusters: [
-              {
-                id: "mock-cluster-1",
-                name: "mock-cluster-1",
-                status: "Online",
-              }
-            ],
-            decisions: [
-              {
-                name: "placement-2-decision-1",
-                namespace: "default",
-                decisions: [
-                  {
-                    clusterName: "mock-cluster-1",
-                    reason: "Selected by placement"
-                  }
-                ]
-              }
-            ]
-          });
-        } else if (name === "placement-3" && namespace === "app-team-1") {
-          resolve({
-            id: "placement-3",
-            name: "placement-3",
-            namespace: "app-team-1",
-            creationTimestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            clusterSets: ["global"],
-            numberOfSelectedClusters: 2,
-            predicates: [
-              {
-                requiredClusterSelector: {
-                  celSelector: {
-                    celExpressions: [
-                      "managedCluster.status.version.kubernetes == \"v1.31.0\""
-                    ]
-                  }
-                }
-              }
-            ],
-            tolerations: [
-              {
-                key: "gpu",
-                value: "true",
-                operator: "Equal"
-              }
-            ],
-            decisionStrategy: {
-              groupStrategy: {
-                decisionGroups: [
-                  {
-                    groupName: "canary",
-                    groupClusterSelector: {
-                      labelSelector: {
-                        matchLabels: {
-                          "canary": "true"
-                        }
-                      }
-                    }
-                  }
-                ],
-                clustersPerDecisionGroup: "50%"
-              }
+              ]
             },
             decisionGroups: [
               {
                 decisionGroupIndex: 0,
-                decisionGroupName: "canary",
-                decisions: ["placement-3-decision-1"],
-                clusterCount: 1
-              },
-              {
-                decisionGroupIndex: 1,
                 decisionGroupName: "",
-                decisions: ["placement-3-decision-2"],
+                decisions: ["placement-priority-decision-1"],
                 clusterCount: 1
               }
             ],
             conditions: [
               {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
                 type: "PlacementSatisfied",
                 status: "True",
-                reason: "PlacementSatisfied",
-                message: "Placement requirements are satisfied",
-                lastTransitionTime: new Date().toISOString()
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
+              }
+            ],
+            satisfied: true,
+            selectedClusters: [
+              {
+                id: "mock-cluster-2",
+                name: "mock-cluster-2",
+                status: "Online",
+              }
+            ],
+            decisions: [
+              {
+                name: "placement-priority-decision-1",
+                namespace: "default",
+                decisions: [
+                  {
+                    clusterName: "mock-cluster-2",
+                    reason: "Selected by placement (highest ResourceAllocatableMemory)"
+                  }
+                ]
+              }
+            ]
+          });
+        } else if (actualName === "placement-tolerations" && actualNamespace === "default") {
+          resolve({
+            id: "0d39b430-8a78-46e1-b6fc-62b091196703",
+            name: "placement-tolerations",
+            namespace: "default",
+            creationTimestamp: "2025-05-20T13:42:49Z",
+            clusterSets: [],
+            numberOfSelectedClusters: 2,
+            tolerations: [
+              {
+                key: "gpu",
+                value: "true",
+                operator: "Equal",
+                tolerationSeconds: 300
+              }
+            ],
+            decisionGroups: [
+              {
+                decisionGroupIndex: 0,
+                decisionGroupName: "",
+                decisions: ["placement-tolerations-decision-1"],
+                clusterCount: 2
+              }
+            ],
+            conditions: [
+              {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T13:42:49Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
             satisfied: true,
@@ -549,21 +561,87 @@ export const fetchPlacementByName = async (
             ],
             decisions: [
               {
-                name: "placement-3-decision-1",
-                namespace: "app-team-1",
+                name: "placement-tolerations-decision-1",
+                namespace: "default",
                 decisions: [
                   {
                     clusterName: "mock-cluster-3",
-                    reason: "Selected by placement (canary group)"
-                  }
-                ]
-              },
-              {
-                name: "placement-3-decision-2",
-                namespace: "app-team-1",
-                decisions: [
+                    reason: "Selected by placement"
+                  },
                   {
                     clusterName: "mock-cluster-4",
+                    reason: "Selected by placement"
+                  }
+                ]
+              }
+            ]
+          });
+        } else if (actualName === "global" && actualNamespace === "open-cluster-management-addon") {
+          resolve({
+            id: "bcfd62a3-43a3-4717-9fce-3455631bbe82",
+            name: "global",
+            namespace: "open-cluster-management-addon",
+            creationTimestamp: "2025-05-20T08:52:35Z",
+            clusterSets: ["global"],
+            numberOfSelectedClusters: 2,
+            tolerations: [
+              {
+                key: "cluster.open-cluster-management.io/unreachable",
+                operator: "Equal"
+              },
+              {
+                key: "cluster.open-cluster-management.io/unavailable",
+                operator: "Equal"
+              }
+            ],
+            decisionGroups: [
+              {
+                decisionGroupIndex: 0,
+                decisionGroupName: "",
+                decisions: ["global-decision-1"],
+                clusterCount: 2
+              }
+            ],
+            conditions: [
+              {
+                type: "PlacementMisconfigured",
+                status: "False",
+                reason: "Succeedconfigured",
+                message: "Placement configurations check pass",
+                lastTransitionTime: "2025-05-20T08:52:35Z"
+              },
+              {
+                type: "PlacementSatisfied",
+                status: "True",
+                reason: "AllDecisionsScheduled",
+                message: "All cluster decisions scheduled",
+                lastTransitionTime: "2025-05-20T08:52:35Z"
+              }
+            ],
+            satisfied: true,
+            selectedClusters: [
+              {
+                id: "mock-cluster-5",
+                name: "mock-cluster-5",
+                status: "Online",
+              },
+              {
+                id: "mock-cluster-6",
+                name: "mock-cluster-6",
+                status: "Online",
+              }
+            ],
+            decisions: [
+              {
+                name: "global-decision-1",
+                namespace: "open-cluster-management-addon",
+                decisions: [
+                  {
+                    clusterName: "mock-cluster-5",
+                    reason: "Selected by placement"
+                  },
+                  {
+                    clusterName: "mock-cluster-6",
                     reason: "Selected by placement"
                   }
                 ]
@@ -578,7 +656,7 @@ export const fetchPlacementByName = async (
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/placements/${name}`, {
+    const response = await fetch(`${API_BASE}/api/namespaces/${actualNamespace}/placements/${actualName}`, {
       headers: createHeaders()
     });
 
@@ -588,7 +666,7 @@ export const fetchPlacementByName = async (
 
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching placement ${namespace}/${name}:`, error);
+    console.error(`Error fetching placement ${actualNamespace}/${actualName}:`, error);
     return null;
   }
 };
@@ -598,62 +676,90 @@ export const fetchPlacementDecisions = async (
   namespace: string,
   placementName: string
 ): Promise<PlacementDecision[]> => {
+  console.log(`API fetchPlacementDecisions called with namespace=${namespace}, placementName=${placementName}`);
+
+  // Handle the case where URL parameters might include namespace
+  let actualNamespace = namespace;
+  let actualName = placementName;
+
+  // Check if placementName contains a slash, which means it might be in "namespace/name" format
+  // But avoid re-parsing if it has already been processed in the component
+  if (!namespace.includes('_PARSED_') && placementName && placementName.includes('/')) {
+    const parts = placementName.split('/');
+    if (parts.length === 2) {
+      actualNamespace = parts[0];
+      actualName = parts[1];
+      console.log(`Parsed name from URL: namespace=${actualNamespace}, name=${actualName}`);
+    }
+  }
+
+  // Remove marker
+  if (actualNamespace.includes('_PARSED_')) {
+    actualNamespace = actualNamespace.replace('_PARSED_', '');
+  }
+
   // Use mock data in development mode unless specifically requested to use real API
   if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        if (placementName === "placement-1" && namespace === "default") {
+        console.log(`Checking mock decisions for ${actualNamespace}/${actualName}`);
+
+        if (actualName === "placement-label-claim" && actualNamespace === "default") {
+          console.log(`Returning mock decisions for ${actualNamespace}/${actualName}`);
           resolve([
             {
-              name: "placement-1-decision-1",
+              name: "placement-label-claim-decision-1",
               namespace: "default",
               decisions: [
                 {
                   clusterName: "mock-cluster-1",
                   reason: "Selected by placement"
-                },
+                }
+              ]
+            }
+          ]);
+        } else if (actualName === "placement-priority" && actualNamespace === "default") {
+          resolve([
+            {
+              name: "placement-priority-decision-1",
+              namespace: "default",
+              decisions: [
                 {
                   clusterName: "mock-cluster-2",
-                  reason: "Selected by placement"
-                },
-                {
-                  clusterName: "mock-cluster-3",
-                  reason: "Selected by placement"
+                  reason: "Selected by placement (highest ResourceAllocatableMemory)"
                 }
               ]
             }
           ]);
-        } else if (placementName === "placement-2" && namespace === "default") {
+        } else if (actualName === "placement-tolerations" && actualNamespace === "default") {
           resolve([
             {
-              name: "placement-2-decision-1",
+              name: "placement-tolerations-decision-1",
               namespace: "default",
               decisions: [
                 {
-                  clusterName: "mock-cluster-1",
+                  clusterName: "mock-cluster-3",
+                  reason: "Selected by placement"
+                },
+                {
+                  clusterName: "mock-cluster-4",
                   reason: "Selected by placement"
                 }
               ]
             }
           ]);
-        } else if (placementName === "placement-3" && namespace === "app-team-1") {
+        } else if (actualName === "global" && actualNamespace === "open-cluster-management-addon") {
           resolve([
             {
-              name: "placement-3-decision-1",
-              namespace: "app-team-1",
+              name: "global-decision-1",
+              namespace: "open-cluster-management-addon",
               decisions: [
                 {
-                  clusterName: "mock-cluster-3",
-                  reason: "Selected by placement (canary group)"
-                }
-              ]
-            },
-            {
-              name: "placement-3-decision-2",
-              namespace: "app-team-1",
-              decisions: [
+                  clusterName: "mock-cluster-5",
+                  reason: "Selected by placement"
+                },
                 {
-                  clusterName: "mock-cluster-4",
+                  clusterName: "mock-cluster-6",
                   reason: "Selected by placement"
                 }
               ]
@@ -667,7 +773,7 @@ export const fetchPlacementDecisions = async (
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/placements/${placementName}/decisions`, {
+    const response = await fetch(`${API_BASE}/api/namespaces/${actualNamespace}/placements/${actualName}/decisions`, {
       headers: createHeaders()
     });
 
@@ -677,7 +783,7 @@ export const fetchPlacementDecisions = async (
 
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching placement decisions for ${namespace}/${placementName}:`, error);
+    console.error(`Error fetching placement decisions for ${actualNamespace}/${actualName}:`, error);
     return [];
   }
 };

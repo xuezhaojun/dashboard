@@ -80,21 +80,53 @@ export default function PlacementDetailPage() {
         return;
       }
 
+      console.log(`Loading placement data for ${namespace}/${name}`);
+
       try {
         setLoading(true);
-        const placementData = await fetchPlacementByName(namespace, name);
+
+        // Handle the case where URL parameters might include namespace
+        let actualNamespace = namespace;
+        let actualName = name;
+
+        // Check if name contains a slash, which means it might be in "namespace/name" format
+        // But avoid re-parsing if it has already been processed in the component
+        if (namespace && namespace.includes('/')) {
+          console.log(`Namespace contains slash, parsing: ${namespace}`);
+          const parts = namespace.split('/');
+          if (parts.length === 2) {
+            actualNamespace = parts[0];
+            actualName = parts[1];
+          }
+        }
+
+        // Remove marker
+        if (actualNamespace.includes('_PARSED_')) {
+          actualNamespace = actualNamespace.replace('_PARSED_', '');
+        } else if (actualNamespace !== namespace || actualName !== name) {
+          // Add marker to avoid API from re-parsing
+          actualNamespace = `${actualNamespace}_PARSED_`;
+        }
+
+        console.log(`Using namespace=${actualNamespace}, name=${actualName} for API call`);
+        const placementData = await fetchPlacementByName(actualNamespace, actualName);
+        console.log("Received placement data:", placementData);
+
         if (placementData) {
           setPlacement(placementData);
 
           // Fetch decisions if not included in the placement data
           if (!placementData.decisions) {
-            const decisionsData = await fetchPlacementDecisions(namespace, name);
+            console.log(`Fetching additional decisions for ${actualNamespace}/${actualName}`);
+            const decisionsData = await fetchPlacementDecisions(actualNamespace, actualName);
+            console.log("Received decisions data:", decisionsData);
             setDecisions(decisionsData);
           } else {
-            setDecisions(placementData.decisions);
+            setDecisions(placementData.decisions || []);
           }
         } else {
-          setError(`Placement ${namespace}/${name} not found`);
+          console.error(`Placement ${actualNamespace}/${actualName} not found`);
+          setError(`Placement ${actualNamespace}/${actualName} not found`);
         }
         setLoading(false);
       } catch (error) {
@@ -158,7 +190,7 @@ export default function PlacementDetailPage() {
   }
 
   // Get status icon based on satisfied condition
-  const getStatusIcon = (satisfied: boolean) => {
+  const getStatusIcon = (satisfied: boolean | undefined) => {
     return satisfied ? (
       <CheckCircleIcon sx={{ color: "success.main" }} />
     ) : (
@@ -166,13 +198,35 @@ export default function PlacementDetailPage() {
     );
   };
 
+  // Determine if placement is satisfied based on conditions
+  const isPlacementSatisfied = () => {
+    if (placement.satisfied !== undefined) {
+      return placement.satisfied;
+    }
+
+    // Check if PlacementSatisfied condition is True
+    return placement.conditions?.some(
+      condition => condition.type === 'PlacementSatisfied' && condition.status === 'True'
+    ) || false;
+  };
+
   const placementStatusText = () => {
-    if (placement.satisfied) {
+    const satisfied = isPlacementSatisfied();
+
+    if (satisfied) {
       return "Satisfied";
     } else {
-      return placement.reasonMessage || "Unsatisfied";
+      // Look for message in conditions
+      const message = placement.conditions?.find(
+        condition => condition.type === 'PlacementSatisfied' && condition.status === 'False'
+      )?.message;
+
+      return message || placement.reasonMessage || "Unsatisfied";
     }
   };
+
+  // Check if the placement is satisfied
+  const satisfied = isPlacementSatisfied();
 
   return (
     <Box sx={{ p: 3 }}>
@@ -197,7 +251,7 @@ export default function PlacementDetailPage() {
           <Grid size={{ xs: 12, md: 4 }}>
             <Typography variant="subtitle2" color="text.secondary">Status</Typography>
             <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-              {getStatusIcon(placement.satisfied)}
+              {getStatusIcon(satisfied)}
               <Typography variant="body1" sx={{ ml: 1, fontWeight: 'medium' }}>
                 {placementStatusText()}
               </Typography>
@@ -207,7 +261,7 @@ export default function PlacementDetailPage() {
             <Typography variant="subtitle2" color="text.secondary">Clusters</Typography>
             <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
               <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                {placement.numberOfSelectedClusters} / {placement.numberOfClusters ?? "∞"}
+                {placement.numberOfSelectedClusters || 0} / {placement.numberOfClusters ?? "∞"}
               </Typography>
             </Box>
           </Grid>
@@ -238,7 +292,7 @@ export default function PlacementDetailPage() {
           <Grid size={{ xs: 12, md: 6 }}>
             <Paper sx={{ p: 3, borderRadius: 2, height: '100%' }}>
               <Typography variant="h6" sx={{ mb: 2 }}>ClusterSets</Typography>
-              {placement.clusterSets.length === 0 ? (
+              {!placement.clusterSets || placement.clusterSets.length === 0 ? (
                 <Typography color="text.secondary">No cluster sets specified</Typography>
               ) : (
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
@@ -286,7 +340,7 @@ export default function PlacementDetailPage() {
                               {condition.status}
                             </Box>
                           </TableCell>
-                          <TableCell>{condition.reason}</TableCell>
+                          <TableCell>{condition.reason || "-"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -345,7 +399,7 @@ export default function PlacementDetailPage() {
                                     <TableRow key={i}>
                                       <TableCell>{expr.key}</TableCell>
                                       <TableCell>{expr.operator}</TableCell>
-                                      <TableCell>{expr.values.join(', ')}</TableCell>
+                                      <TableCell>{expr.values ? expr.values.join(', ') : ''}</TableCell>
                                     </TableRow>
                                   ))}
                                 </TableBody>
@@ -374,7 +428,7 @@ export default function PlacementDetailPage() {
                                 <TableRow key={i}>
                                   <TableCell>{expr.key}</TableCell>
                                   <TableCell>{expr.operator}</TableCell>
-                                  <TableCell>{expr.values.join(', ')}</TableCell>
+                                  <TableCell>{expr.values ? expr.values.join(', ') : ''}</TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -424,16 +478,16 @@ export default function PlacementDetailPage() {
                       <TableBody>
                         {placement.prioritizerPolicy.configurations.map((config, index) => (
                           <TableRow key={index}>
-                            <TableCell>{config.scoreCoordinate.type}</TableCell>
+                            <TableCell>{config.scoreCoordinate.type || "BuiltIn"}</TableCell>
                             <TableCell>
-                              {config.scoreCoordinate.type === "BuiltIn"
+                              {config.scoreCoordinate.type === "BuiltIn" || !config.scoreCoordinate.type
                                 ? config.scoreCoordinate.builtIn
                                 : config.scoreCoordinate.addOn
                                   ? `${config.scoreCoordinate.addOn.resourceName}/${config.scoreCoordinate.addOn.scoreName}`
                                   : "-"
                               }
                             </TableCell>
-                            <TableCell align="right">{config.weight}</TableCell>
+                            <TableCell align="right">{config.weight || 1}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -469,7 +523,7 @@ export default function PlacementDetailPage() {
                           <TableCell>{toleration.value || "-"}</TableCell>
                           <TableCell>{toleration.operator || "Equal"}</TableCell>
                           <TableCell>{toleration.effect || "-"}</TableCell>
-                          <TableCell>{toleration.tolerationSeconds || "∞"}</TableCell>
+                          <TableCell>{toleration.tolerationSeconds !== undefined ? toleration.tolerationSeconds : "∞"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -552,7 +606,7 @@ export default function PlacementDetailPage() {
                           <TableCell>{group.decisionGroupIndex}</TableCell>
                           <TableCell>{group.decisionGroupName || "(default)"}</TableCell>
                           <TableCell align="center">{group.clusterCount}</TableCell>
-                          <TableCell>{group.decisions.join(", ")}</TableCell>
+                          <TableCell>{group.decisions ? group.decisions.join(", ") : "-"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -569,7 +623,7 @@ export default function PlacementDetailPage() {
         <Paper sx={{ p: 3, borderRadius: 2 }}>
           <Typography variant="h6" sx={{ mb: 3 }}>Selected Clusters</Typography>
 
-          {decisions.length === 0 ? (
+          {(!decisions || decisions.length === 0) ? (
             <Typography color="text.secondary">No placement decisions found</Typography>
           ) : (
             decisions.map((decision, index) => (
@@ -578,9 +632,9 @@ export default function PlacementDetailPage() {
                   <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
                     {decision.name}
                   </Typography>
-                  {placement.decisionGroups && placement.decisionGroups.some(g => g.decisions.includes(decision.name) && g.decisionGroupName) && (
+                  {placement.decisionGroups && placement.decisionGroups.some(g => g.decisions && g.decisions.includes(decision.name) && g.decisionGroupName) && (
                     <Chip
-                      label={placement.decisionGroups.find(g => g.decisions.includes(decision.name))?.decisionGroupName}
+                      label={placement.decisionGroups.find(g => g.decisions && g.decisions.includes(decision.name))?.decisionGroupName}
                       size="small"
                       sx={{ ml: 2 }}
                     />
@@ -596,7 +650,7 @@ export default function PlacementDetailPage() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {decision.decisions.map((clusterDecision, i) => (
+                      {decision.decisions && decision.decisions.map((clusterDecision, i) => (
                         <TableRow
                           key={`${clusterDecision.clusterName}-${i}`}
                           hover
@@ -604,7 +658,7 @@ export default function PlacementDetailPage() {
                           onClick={() => navigate(`/clusters/${clusterDecision.clusterName}`)}
                         >
                           <TableCell>{clusterDecision.clusterName}</TableCell>
-                          <TableCell>{clusterDecision.reason}</TableCell>
+                          <TableCell>{clusterDecision.reason || "Selected by placement"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -666,14 +720,14 @@ metadata:
   namespace: ${placement.namespace}${placement.creationTimestamp ? `
   creationTimestamp: ${placement.creationTimestamp}` : ''}
 spec:
-  clusterSets: ${JSON.stringify(placement.clusterSets, null, 2).replace(/\n/g, '\n  ')}${placement.numberOfClusters ? `
+  clusterSets: ${placement.clusterSets ? JSON.stringify(placement.clusterSets, null, 2).replace(/\n/g, '\n  ') : '[]'}${placement.numberOfClusters ? `
   numberOfClusters: ${placement.numberOfClusters}` : ''}${placement.predicates && placement.predicates.length > 0 ? `
   predicates: ${JSON.stringify(placement.predicates, null, 2).replace(/\n/g, '\n  ')}` : ''}${placement.prioritizerPolicy ? `
   prioritizerPolicy: ${JSON.stringify(placement.prioritizerPolicy, null, 2).replace(/\n/g, '\n  ')}` : ''}${placement.tolerations && placement.tolerations.length > 0 ? `
   tolerations: ${JSON.stringify(placement.tolerations, null, 2).replace(/\n/g, '\n  ')}` : ''}${placement.decisionStrategy ? `
   decisionStrategy: ${JSON.stringify(placement.decisionStrategy, null, 2).replace(/\n/g, '\n  ')}` : ''}
 status:
-  numberOfSelectedClusters: ${placement.numberOfSelectedClusters}${placement.decisionGroups ? `
+  numberOfSelectedClusters: ${placement.numberOfSelectedClusters || 0}${placement.decisionGroups ? `
   decisionGroups: ${JSON.stringify(placement.decisionGroups, null, 2).replace(/\n/g, '\n  ')}` : ''}${placement.conditions ? `
   conditions: ${JSON.stringify(placement.conditions, null, 2).replace(/\n/g, '\n  ')}` : ''}
 `}

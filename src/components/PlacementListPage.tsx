@@ -30,7 +30,6 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   Launch as LaunchIcon,
-  ArrowForward as ArrowForwardIcon,
 } from "@mui/icons-material";
 import { fetchPlacements } from '../api/placementService';
 import type { Placement } from '../api/placementService';
@@ -198,7 +197,6 @@ export default function PlacementListPage() {
                   <TableCell align="center">Selected</TableCell>
                   <TableCell>ClusterSets</TableCell>
                   <TableCell>Created</TableCell>
-                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -243,33 +241,24 @@ export default function PlacementListPage() {
                       </TableCell>
                       <TableCell>
                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                          {placement.clusterSets.map((set) => (
-                            <Chip
-                              key={set}
-                              label={set}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ))}
+                          {placement.clusterSets && placement.clusterSets.length > 0 ? (
+                            placement.clusterSets.map((set) => (
+                              <Chip
+                                key={set}
+                                label={set}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ))
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">-</Typography>
+                          )}
                         </Box>
                       </TableCell>
                       <TableCell>
                         {placement.creationTimestamp
                           ? new Date(placement.creationTimestamp).toLocaleDateString()
                           : "-"}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="View Details">
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/placements/${placement.namespace}/${placement.name}`);
-                            }}
-                          >
-                            <ArrowForwardIcon />
-                          </IconButton>
-                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))
@@ -325,14 +314,18 @@ export default function PlacementListPage() {
             <Box sx={{ display: "flex", mb: 1 }}>
               <Typography variant="subtitle2" sx={{ width: 160 }}>ClusterSets:</Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                {selectedPlacementData.clusterSets.map((set) => (
-                  <Chip
-                    key={set}
-                    label={set}
-                    size="small"
-                    variant="outlined"
-                  />
-                ))}
+                {selectedPlacementData.clusterSets && selectedPlacementData.clusterSets.length > 0 ? (
+                  selectedPlacementData.clusterSets.map((set) => (
+                    <Chip
+                      key={set}
+                      label={set}
+                      size="small"
+                      variant="outlined"
+                    />
+                  ))
+                ) : (
+                  <Typography variant="body2" color="text.secondary">None</Typography>
+                )}
               </Box>
             </Box>
 
