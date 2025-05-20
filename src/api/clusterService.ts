@@ -24,6 +24,9 @@ export interface Cluster {
     effect: string;
   }[];
   creationTimestamp?: string; // From metadata.creationTimestamp
+  // Addon info for list page
+  addonCount?: number;
+  addonNames?: string[];
   // Removing nodes field as it's not available in ManagedCluster
 }
 

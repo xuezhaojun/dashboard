@@ -21,8 +21,7 @@ import {
   TableHead,
   TableRow,
   Tooltip,
-  alpha,
-  useTheme,
+  CircularProgress,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import {
@@ -37,6 +36,7 @@ import type { Cluster } from '../api/clusterService';
 import { useCluster } from '../hooks/useCluster';
 import ClusterDetailContent from './ClusterDetailContent';
 import DrawerLayout from './layout/DrawerLayout';
+import { fetchClusterAddons } from '../api/addonService';
 
 // Gets the Hub Accepted status of a cluster
 const getHubAcceptedStatus = (cluster: Cluster) => {
@@ -47,7 +47,6 @@ const getHubAcceptedStatus = (cluster: Cluster) => {
  * Page component for displaying a list of clusters with a detail drawer
  */
 export default function ClusterListPage() {
-  const theme = useTheme();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -84,6 +83,31 @@ export default function ClusterListPage() {
 
     loadClusters();
   }, []);
+
+  // Fetch addon counts/names for all clusters after clusters are loaded
+  useEffect(() => {
+    if (!clusters.length) return;
+    let cancelled = false;
+    async function fetchAllAddons() {
+      const updated = await Promise.all(clusters.map(async (cluster) => {
+        try {
+          const addons = await fetchClusterAddons(cluster.name);
+          return {
+            ...cluster,
+            addonCount: addons.length,
+            addonNames: addons.map(a => a.name),
+          };
+        } catch {
+          return { ...cluster, addonCount: 0, addonNames: [] };
+        }
+      }));
+      if (!cancelled) {
+        setClusters(updated);
+      }
+    }
+    fetchAllAddons();
+    return () => { cancelled = true; };
+  }, [loading]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -184,94 +208,83 @@ export default function ClusterListPage() {
           </Grid>
         </Paper>
 
-        {/* Cluster list */}
-        <TableContainer component={Paper} sx={{ mt: 3 }}>
-          <Table>
-            <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
+        {/* Cluster Table */}
+        <TableContainer component={Paper}>
+          <Table size="small">
+            <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Version</TableCell>
                 <TableCell>Hub Accepted</TableCell>
                 <TableCell>Labels</TableCell>
+                <TableCell align="center">
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    Add-ons
+                  </Box>
+                </TableCell>
                 <TableCell>Creation Date</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">Loading clusters...</TableCell>
-                </TableRow>
-              ) : filteredClusters.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">No clusters found</TableCell>
-                </TableRow>
-              ) : (
-                filteredClusters.map((cluster) => (
-                  <TableRow
-                    key={cluster.id}
-                    onClick={() => handleClusterSelect(cluster.id)}
-                    sx={{
-                      cursor: "pointer",
-                      "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.05) },
-                      bgcolor: selectedClusterId === cluster.id ? alpha(theme.palette.primary.main, 0.1) : "inherit"
-                    }}
-                  >
-                    <TableCell>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        {getStatusIcon(cluster.status)}
-                        <Typography sx={{ ml: 1, fontWeight: "medium" }}>
-                          {cluster.name}
-                        </Typography>
+              {filteredClusters.map((cluster) => (
+                <TableRow
+                  key={cluster.id}
+                  hover
+                  selected={selectedClusterId === cluster.id}
+                  sx={{ cursor: "pointer" }}
+                  onClick={() => handleClusterSelect(cluster.id)}
+                >
+                  <TableCell>{cluster.name}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      {getStatusIcon(cluster.status)}
+                      <Typography variant="body2" sx={{ ml: 1 }}>{cluster.status}</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>{cluster.version || "-"}</TableCell>
+                  <TableCell>{getHubAcceptedStatus(cluster)}</TableCell>
+                  <TableCell>
+                    {cluster.labels ? (
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                        {Object.entries(cluster.labels).map(([key, value]) => (
+                          <Chip
+                            key={key}
+                            label={`${key}: ${value}`}
+                            size="small"
+                            variant="outlined"
+                          />
+                        ))}
                       </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={cluster.status}
-                        size="small"
-                        color={
-                          cluster.status === "Online" ? "success" :
-                          cluster.status === "Offline" ? "error" : "default"
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    {typeof cluster.addonCount === 'number' ? (
+                      <Tooltip
+                        title={
+                          cluster.addonNames && cluster.addonNames.length > 0
+                            ? cluster.addonNames.join(', ')
+                            : 'No add-ons'
                         }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={getHubAcceptedStatus(cluster)}
-                        size="small"
-                        color={cluster.hubAccepted ? "success" : "default"}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {cluster.labels ? (
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                          {Object.entries(cluster.labels).slice(0, 2).map(([key, value]) => (
-                            <Chip
-                              key={key}
-                              label={`${key}: ${value}`}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ))}
-                          {Object.keys(cluster.labels).length > 2 && (
-                            <Chip
-                              label={`+${Object.keys(cluster.labels).length - 2}`}
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
+                        arrow
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Typography variant="body2">{cluster.addonCount}</Typography>
                         </Box>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {cluster.creationTimestamp
-                        ? new Date(cluster.creationTimestamp).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+                      </Tooltip>
+                    ) : (
+                      <CircularProgress size={18} />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {cluster.creationTimestamp
+                      ? new Date(cluster.creationTimestamp).toLocaleDateString()
+                      : "-"}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
@@ -281,20 +294,18 @@ export default function ClusterListPage() {
       {selectedClusterId && detailCluster && (
         <DrawerLayout
           title={detailCluster.name}
-          icon={getStatusIcon(detailCluster.status)}
           onClose={handleCloseDetail}
         >
-          <Box sx={{ mb: 3 }}>
+          <ClusterDetailContent cluster={detailCluster} compact />
+          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
             <Button
-              variant="outlined"
-              startIcon={<LaunchIcon />}
+              variant="contained"
               onClick={handleViewFullDetails}
+              endIcon={<LaunchIcon />}
             >
               View Full Details
             </Button>
           </Box>
-
-          <ClusterDetailContent cluster={detailCluster} compact />
         </DrawerLayout>
       )}
     </Box>
