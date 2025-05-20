@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import {
   Download as DownloadIcon,
-  Extension as ExtensionIcon,
 } from '@mui/icons-material';
 import type { Cluster } from '../api/clusterService';
 import { useState } from 'react';
@@ -144,8 +143,7 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
             <Tab
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ExtensionIcon sx={{ mr: 0.5, fontSize: '1.1rem' }} />
-                  <span>Add-ons {addons.length > 0 && `(${addons.length})`}</span>
+                  <span>Add-ons</span>
                 </Box>
               }
               {...a11yProps(1)}

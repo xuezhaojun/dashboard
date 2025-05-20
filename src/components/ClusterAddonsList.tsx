@@ -21,7 +21,6 @@ import type { ManagedClusterAddon } from '../api/addonService';
 import { useState } from 'react';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import ExtensionIcon from '@mui/icons-material/Extension';
 
 interface AddonRowProps {
   addon: ManagedClusterAddon;
@@ -75,7 +74,6 @@ function AddonRow({ addon }: AddonRowProps) {
         </TableCell>
         <TableCell component="th" scope="row">
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <ExtensionIcon sx={{ mr: 1, color: 'primary.main' }} />
             <Typography variant="body1">{addon.name}</Typography>
           </Box>
         </TableCell>
@@ -93,47 +91,9 @@ function AddonRow({ addon }: AddonRowProps) {
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 2 }}>
-              <Typography variant="subtitle2" gutterBottom component="div" sx={{ fontWeight: 'bold' }}>
-                Conditions
-              </Typography>
-              {addon.conditions && addon.conditions.length > 0 ? (
-                <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
-                  <Table size="small" aria-label="addon conditions">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Reason</TableCell>
-                        <TableCell>Message</TableCell>
-                        <TableCell>Last Transition</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {addon.conditions.map((condition, index) => (
-                        <TableRow key={index}>
-                          <TableCell component="th" scope="row">{condition.type}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={condition.status}
-                              color={condition.status === 'True' ? 'success' : condition.status === 'False' ? 'default' : 'warning'}
-                              size="small"
-                            />
-                          </TableCell>
-                          <TableCell>{condition.reason || '-'}</TableCell>
-                          <TableCell>{condition.message || '-'}</TableCell>
-                          <TableCell>{formatDate(condition.lastTransitionTime)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              ) : (
-                <Typography variant="body2" color="text.secondary">No conditions available</Typography>
-              )}
-
               {addon.registrations && addon.registrations.length > 0 && (
                 <>
-                  <Typography variant="subtitle2" gutterBottom component="div" sx={{ fontWeight: 'bold', mt: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom component="div" sx={{ fontWeight: 'bold', mt: 0 }}>
                     Registrations
                   </Typography>
                   {addon.registrations.map((registration, idx) => (
@@ -186,6 +146,44 @@ function AddonRow({ addon }: AddonRowProps) {
                     </Table>
                   </TableContainer>
                 </>
+              )}
+
+              <Typography variant="subtitle2" gutterBottom component="div" sx={{ fontWeight: 'bold', mt: 2 }}>
+                Conditions
+              </Typography>
+              {addon.conditions && addon.conditions.length > 0 ? (
+                <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+                  <Table size="small" aria-label="addon conditions">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Reason</TableCell>
+                        <TableCell>Message</TableCell>
+                        <TableCell>Last Transition</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {addon.conditions.map((condition, index) => (
+                        <TableRow key={index}>
+                          <TableCell component="th" scope="row">{condition.type}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={condition.status}
+                              color={condition.status === 'True' ? 'success' : condition.status === 'False' ? 'default' : 'warning'}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>{condition.reason || '-'}</TableCell>
+                          <TableCell>{condition.message || '-'}</TableCell>
+                          <TableCell>{formatDate(condition.lastTransitionTime)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Typography variant="body2" color="text.secondary">No conditions available</Typography>
               )}
             </Box>
           </Collapse>
