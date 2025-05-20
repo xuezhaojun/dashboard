@@ -36,11 +36,25 @@ var managedClusterSetResource = schema.GroupVersionResource{
 	Resource: "managedclustersets",
 }
 
-// ManagedClusterAddOn resource
+// ManagedClusterAddon resource
 var managedClusterAddonResource = schema.GroupVersionResource{
 	Group:    "addon.open-cluster-management.io",
 	Version:  "v1alpha1",
 	Resource: "managedclusteraddons",
+}
+
+// Placement resource
+var placementResource = schema.GroupVersionResource{
+	Group:    "cluster.open-cluster-management.io",
+	Version:  "v1beta1",
+	Resource: "placements",
+}
+
+// PlacementDecision resource
+var placementDecisionResource = schema.GroupVersionResource{
+	Group:    "cluster.open-cluster-management.io",
+	Version:  "v1beta1",
+	Resource: "placementdecisions",
 }
 
 // Condition represents the status condition of a cluster
@@ -155,6 +169,143 @@ type ManagedClusterAddon struct {
 	Conditions        []Condition            `json:"conditions,omitempty"`
 	Registrations     []AddonRegistration    `json:"registrations,omitempty"`
 	SupportedConfigs  []AddonSupportedConfig `json:"supportedConfigs,omitempty"`
+}
+
+// MatchExpression represents a label/claim expression for a Placement
+type MatchExpression struct {
+	Key      string   `json:"key"`
+	Operator string   `json:"operator"`
+	Values   []string `json:"values,omitempty"`
+}
+
+// LabelSelectorWithExpressions represents a label selector with expressions
+type LabelSelectorWithExpressions struct {
+	MatchLabels      map[string]string `json:"matchLabels,omitempty"`
+	MatchExpressions []MatchExpression `json:"matchExpressions,omitempty"`
+}
+
+// ClaimSelectorWithExpressions represents a claim selector with expressions
+type ClaimSelectorWithExpressions struct {
+	MatchExpressions []MatchExpression `json:"matchExpressions,omitempty"`
+}
+
+// CelSelectorWithExpressions represents a CEL selector with expressions
+type CelSelectorWithExpressions struct {
+	CelExpressions []string `json:"celExpressions,omitempty"`
+}
+
+// RequiredClusterSelector represents required cluster selector
+type RequiredClusterSelector struct {
+	LabelSelector *LabelSelectorWithExpressions `json:"labelSelector,omitempty"`
+	ClaimSelector *ClaimSelectorWithExpressions `json:"claimSelector,omitempty"`
+	CelSelector   *CelSelectorWithExpressions   `json:"celSelector,omitempty"`
+}
+
+// Predicate represents a placement predicate
+type Predicate struct {
+	RequiredClusterSelector *RequiredClusterSelector `json:"requiredClusterSelector,omitempty"`
+}
+
+// AddOnScore represents addon score configuration
+type AddOnScore struct {
+	ResourceName string `json:"resourceName"`
+	ScoreName    string `json:"scoreName"`
+}
+
+// ScoreCoordinate represents score coordinate
+type ScoreCoordinate struct {
+	Type    string      `json:"type,omitempty"`
+	BuiltIn string      `json:"builtIn,omitempty"`
+	AddOn   *AddOnScore `json:"addOn,omitempty"`
+}
+
+// PrioritizerConfig represents the configuration of a prioritizer
+type PrioritizerConfig struct {
+	ScoreCoordinate *ScoreCoordinate `json:"scoreCoordinate,omitempty"`
+	Weight          int32            `json:"weight,omitempty"`
+}
+
+// PrioritizerPolicy represents prioritizer policy
+type PrioritizerPolicy struct {
+	Mode           string              `json:"mode,omitempty"`
+	Configurations []PrioritizerConfig `json:"configurations,omitempty"`
+}
+
+// GroupClusterSelector represents a selector for a group of clusters
+type GroupClusterSelector struct {
+	LabelSelector *LabelSelectorWithExpressions `json:"labelSelector,omitempty"`
+}
+
+// DecisionGroup represents a group in decision strategy
+type DecisionGroup struct {
+	GroupName            string               `json:"groupName,omitempty"`
+	GroupClusterSelector GroupClusterSelector `json:"groupClusterSelector,omitempty"`
+}
+
+// GroupStrategy represents group strategy for decisions
+type GroupStrategy struct {
+	DecisionGroups           []DecisionGroup `json:"decisionGroups,omitempty"`
+	ClustersPerDecisionGroup string          `json:"clustersPerDecisionGroup,omitempty"`
+}
+
+// DecisionStrategy represents strategy for placement decisions
+type DecisionStrategy struct {
+	GroupStrategy GroupStrategy `json:"groupStrategy,omitempty"`
+}
+
+// PlacementToleration represents a toleration for placement
+type PlacementToleration struct {
+	Key               string `json:"key,omitempty"`
+	Operator          string `json:"operator,omitempty"`
+	Value             string `json:"value,omitempty"`
+	Effect            string `json:"effect,omitempty"`
+	TolerationSeconds *int64 `json:"tolerationSeconds,omitempty"`
+}
+
+// DecisionGroupStatus represents status of a decision group
+type DecisionGroupStatus struct {
+	DecisionGroupIndex int32    `json:"decisionGroupIndex"`
+	DecisionGroupName  string   `json:"decisionGroupName,omitempty"`
+	Decisions          []string `json:"decisions,omitempty"`
+	ClusterCount       int32    `json:"clusterCount"`
+}
+
+// Placement represents a simplified OCM Placement
+type Placement struct {
+	ID                       string                `json:"id"`
+	Name                     string                `json:"name"`
+	Namespace                string                `json:"namespace"`
+	CreationTimestamp        string                `json:"creationTimestamp,omitempty"`
+	ClusterSets              []string              `json:"clusterSets,omitempty"`
+	NumberOfClusters         *int32                `json:"numberOfClusters,omitempty"`
+	Predicates               []Predicate           `json:"predicates,omitempty"`
+	PrioritizerPolicy        *PrioritizerPolicy    `json:"prioritizerPolicy,omitempty"`
+	Tolerations              []PlacementToleration `json:"tolerations,omitempty"`
+	DecisionStrategy         *DecisionStrategy     `json:"decisionStrategy,omitempty"`
+	NumberOfSelectedClusters int32                 `json:"numberOfSelectedClusters"`
+	DecisionGroups           []DecisionGroupStatus `json:"decisionGroups,omitempty"`
+	Conditions               []Condition           `json:"conditions,omitempty"`
+	Satisfied                bool                  `json:"satisfied"`
+	ReasonMessage            string                `json:"reasonMessage,omitempty"`
+}
+
+// ClusterDecision represents a single cluster decision
+type ClusterDecision struct {
+	ClusterName string `json:"clusterName"`
+	Reason      string `json:"reason"`
+}
+
+// PlacementDecision represents a simplified OCM PlacementDecision
+type PlacementDecision struct {
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Namespace string            `json:"namespace"`
+	Decisions []ClusterDecision `json:"decisions,omitempty"`
+}
+
+// Helper function to create a pointer to an int32
+func intPtr(i int32) *int32 {
+	return &i
 }
 
 func main() {
@@ -1566,6 +1717,802 @@ func main() {
 			}
 
 			c.JSON(http.StatusOK, clusterSet)
+		})
+
+		// Get all placements
+		api.GET("/placements", authMiddleware, func(c *gin.Context) {
+			// Check if using mock data
+			if os.Getenv("DASHBOARD_USE_MOCK") == "true" {
+				// Return mock data
+				mockPlacements := []Placement{
+					{
+						ID:                       "placement-1",
+						Name:                     "placement-1",
+						Namespace:                "default",
+						CreationTimestamp:        time.Now().AddDate(0, 0, -15).Format(time.RFC3339),
+						ClusterSets:              []string{"global"},
+						NumberOfClusters:         intPtr(3),
+						NumberOfSelectedClusters: 3,
+						Predicates: []Predicate{
+							{
+								RequiredClusterSelector: &RequiredClusterSelector{
+									LabelSelector: &LabelSelectorWithExpressions{
+										MatchLabels: map[string]string{
+											"env": "production",
+										},
+									},
+								},
+							},
+						},
+						PrioritizerPolicy: &PrioritizerPolicy{
+							Mode: "Additive",
+							Configurations: []PrioritizerConfig{
+								{
+									ScoreCoordinate: &ScoreCoordinate{
+										Type:    "BuiltIn",
+										BuiltIn: "ResourceAllocatableMemory",
+									},
+									Weight: 2,
+								},
+							},
+						},
+						DecisionGroups: []DecisionGroupStatus{
+							{
+								DecisionGroupIndex: 0,
+								DecisionGroupName:  "",
+								Decisions:          []string{"placement-1-decision-1"},
+								ClusterCount:       3,
+							},
+						},
+						Conditions: []Condition{
+							{
+								Type:               "PlacementSatisfied",
+								Status:             "True",
+								Reason:             "PlacementSatisfied",
+								Message:            "Placement requirements are satisfied",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+							},
+						},
+						Satisfied: true,
+					},
+					{
+						ID:                       "placement-2",
+						Name:                     "placement-2",
+						Namespace:                "default",
+						CreationTimestamp:        time.Now().AddDate(0, 0, -5).Format(time.RFC3339),
+						ClusterSets:              []string{"east", "west"},
+						NumberOfClusters:         intPtr(2),
+						NumberOfSelectedClusters: 1,
+						Predicates: []Predicate{
+							{
+								RequiredClusterSelector: &RequiredClusterSelector{
+									ClaimSelector: &ClaimSelectorWithExpressions{
+										MatchExpressions: []MatchExpression{
+											{
+												Key:      "platform.open-cluster-management.io",
+												Operator: "In",
+												Values:   []string{"AWS"},
+											},
+										},
+									},
+								},
+							},
+						},
+						DecisionGroups: []DecisionGroupStatus{
+							{
+								DecisionGroupIndex: 0,
+								DecisionGroupName:  "",
+								Decisions:          []string{"placement-2-decision-1"},
+								ClusterCount:       1,
+							},
+						},
+						Conditions: []Condition{
+							{
+								Type:               "PlacementSatisfied",
+								Status:             "False",
+								Reason:             "NotEnoughClusters",
+								Message:            "Not enough clusters match the placement requirements",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+							},
+						},
+						Satisfied:     false,
+						ReasonMessage: "Not enough clusters match the placement requirements",
+					},
+					{
+						ID:                       "placement-3",
+						Name:                     "placement-3",
+						Namespace:                "app-team-1",
+						CreationTimestamp:        time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
+						ClusterSets:              []string{"global"},
+						NumberOfSelectedClusters: 2,
+						Predicates: []Predicate{
+							{
+								RequiredClusterSelector: &RequiredClusterSelector{
+									CelSelector: &CelSelectorWithExpressions{
+										CelExpressions: []string{
+											`managedCluster.status.version.kubernetes == "v1.31.0"`,
+										},
+									},
+								},
+							},
+						},
+						Tolerations: []PlacementToleration{
+							{
+								Key:      "gpu",
+								Value:    "true",
+								Operator: "Equal",
+							},
+						},
+						DecisionStrategy: &DecisionStrategy{
+							GroupStrategy: GroupStrategy{
+								DecisionGroups: []DecisionGroup{
+									{
+										GroupName: "canary",
+										GroupClusterSelector: GroupClusterSelector{
+											LabelSelector: &LabelSelectorWithExpressions{
+												MatchLabels: map[string]string{
+													"canary": "true",
+												},
+											},
+										},
+									},
+								},
+								ClustersPerDecisionGroup: "50%",
+							},
+						},
+						DecisionGroups: []DecisionGroupStatus{
+							{
+								DecisionGroupIndex: 0,
+								DecisionGroupName:  "canary",
+								Decisions:          []string{"placement-3-decision-1"},
+								ClusterCount:       1,
+							},
+							{
+								DecisionGroupIndex: 1,
+								DecisionGroupName:  "",
+								Decisions:          []string{"placement-3-decision-2"},
+								ClusterCount:       1,
+							},
+						},
+						Conditions: []Condition{
+							{
+								Type:               "PlacementSatisfied",
+								Status:             "True",
+								Reason:             "PlacementSatisfied",
+								Message:            "Placement requirements are satisfied",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+							},
+						},
+						Satisfied: true,
+					},
+				}
+				c.JSON(http.StatusOK, mockPlacements)
+				return
+			}
+
+			// Ensure we have a client before proceeding
+			if dynamicClient == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not initialized"})
+				return
+			}
+
+			// List real placements (all namespaces)
+			list, err := dynamicClient.Resource(placementResource).Namespace("").List(ctx, metav1.ListOptions{})
+			if err != nil {
+				if debugMode {
+					log.Printf("Error listing placements: %v", err)
+				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			// Convert to our simplified Placement format
+			placements := make([]Placement, 0, len(list.Items))
+			for _, item := range list.Items {
+				// Extract the basic metadata
+				placement := Placement{
+					ID:                string(item.GetUID()),
+					Name:              item.GetName(),
+					Namespace:         item.GetNamespace(),
+					CreationTimestamp: item.GetCreationTimestamp().Format(time.RFC3339),
+				}
+
+				// Extract spec
+				spec, found, err := unstructured.NestedMap(item.Object, "spec")
+				if err == nil && found {
+					// Extract clusterSets
+					if clusterSets, found, _ := unstructured.NestedStringSlice(spec, "clusterSets"); found {
+						placement.ClusterSets = clusterSets
+					}
+
+					// Extract numberOfClusters
+					if numberOfClusters, found, _ := unstructured.NestedInt64(spec, "numberOfClusters"); found {
+						num := int32(numberOfClusters)
+						placement.NumberOfClusters = &num
+					}
+
+					// Extract predicates (simplified)
+					if predicates, found, _ := unstructured.NestedSlice(spec, "predicates"); found {
+						placement.Predicates = make([]Predicate, 0, len(predicates))
+						for _, p := range predicates {
+							predicateMap, ok := p.(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							predicate := Predicate{}
+
+							// Extract requiredClusterSelector
+							if selector, found, _ := unstructured.NestedMap(predicateMap, "requiredClusterSelector"); found {
+								predicate.RequiredClusterSelector = &RequiredClusterSelector{}
+
+								// Extract labelSelector
+								if labelSelector, found, _ := unstructured.NestedMap(selector, "labelSelector"); found {
+									predicate.RequiredClusterSelector.LabelSelector = &LabelSelectorWithExpressions{}
+
+									// Extract matchLabels
+									if matchLabels, found, _ := unstructured.NestedMap(labelSelector, "matchLabels"); found {
+										matchLabelsMap := make(map[string]string)
+										for k, v := range matchLabels {
+											if strValue, ok := v.(string); ok {
+												matchLabelsMap[k] = strValue
+											}
+										}
+										predicate.RequiredClusterSelector.LabelSelector.MatchLabels = matchLabelsMap
+									}
+								}
+
+								// Extract claimSelector (simplified)
+								if _, found, _ := unstructured.NestedMap(selector, "claimSelector"); found {
+									predicate.RequiredClusterSelector.ClaimSelector = &ClaimSelectorWithExpressions{}
+								}
+
+								// Extract celSelector (simplified)
+								if celSelector, found, _ := unstructured.NestedMap(selector, "celSelector"); found {
+									predicate.RequiredClusterSelector.CelSelector = &CelSelectorWithExpressions{}
+
+									// Extract celExpressions
+									if celExpressions, found, _ := unstructured.NestedStringSlice(celSelector, "celExpressions"); found {
+										predicate.RequiredClusterSelector.CelSelector.CelExpressions = celExpressions
+									}
+								}
+							}
+
+							placement.Predicates = append(placement.Predicates, predicate)
+						}
+					}
+
+					// Extract prioritizerPolicy (simplified)
+					if policy, found, _ := unstructured.NestedMap(spec, "prioritizerPolicy"); found {
+						placement.PrioritizerPolicy = &PrioritizerPolicy{}
+
+						// Extract mode
+						if mode, found, _ := unstructured.NestedString(policy, "mode"); found {
+							placement.PrioritizerPolicy.Mode = mode
+						}
+					}
+
+					// Extract tolerations (simplified)
+					if tolerations, found, _ := unstructured.NestedSlice(spec, "tolerations"); found && len(tolerations) > 0 {
+						placement.Tolerations = make([]PlacementToleration, 0, len(tolerations))
+					}
+
+					// Extract decisionStrategy (simplified)
+					if _, found, _ := unstructured.NestedMap(spec, "decisionStrategy"); found {
+						placement.DecisionStrategy = &DecisionStrategy{}
+					}
+				}
+
+				// Extract status
+				status, found, err := unstructured.NestedMap(item.Object, "status")
+				if err == nil && found {
+					// Extract numberOfSelectedClusters
+					if numberOfSelectedClusters, found, _ := unstructured.NestedInt64(status, "numberOfSelectedClusters"); found {
+						placement.NumberOfSelectedClusters = int32(numberOfSelectedClusters)
+					}
+
+					// Extract decisionGroups (simplified)
+					if decisionGroups, found, _ := unstructured.NestedSlice(status, "decisionGroups"); found {
+						placement.DecisionGroups = make([]DecisionGroupStatus, 0, len(decisionGroups))
+						for _, dg := range decisionGroups {
+							dgMap, ok := dg.(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							decisionGroup := DecisionGroupStatus{}
+
+							// Extract decisionGroupIndex
+							if idx, found, _ := unstructured.NestedInt64(dgMap, "decisionGroupIndex"); found {
+								decisionGroup.DecisionGroupIndex = int32(idx)
+							}
+
+							// Extract decisionGroupName
+							if name, found, _ := unstructured.NestedString(dgMap, "decisionGroupName"); found {
+								decisionGroup.DecisionGroupName = name
+							}
+
+							// Extract decisions
+							if decisions, found, _ := unstructured.NestedStringSlice(dgMap, "decisions"); found {
+								decisionGroup.Decisions = decisions
+							}
+
+							// Extract clusterCount
+							if count, found, _ := unstructured.NestedInt64(dgMap, "clusterCount"); found {
+								decisionGroup.ClusterCount = int32(count)
+							}
+
+							placement.DecisionGroups = append(placement.DecisionGroups, decisionGroup)
+						}
+					}
+
+					// Extract conditions
+					if conditions, found, _ := unstructured.NestedSlice(status, "conditions"); found {
+						for _, c := range conditions {
+							condMap, ok := c.(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							condition := Condition{}
+
+							if t, found, _ := unstructured.NestedString(condMap, "type"); found {
+								condition.Type = t
+							}
+
+							if s, found, _ := unstructured.NestedString(condMap, "status"); found {
+								condition.Status = s
+							}
+
+							if r, found, _ := unstructured.NestedString(condMap, "reason"); found {
+								condition.Reason = r
+							}
+
+							if m, found, _ := unstructured.NestedString(condMap, "message"); found {
+								condition.Message = m
+							}
+
+							if lt, found, _ := unstructured.NestedString(condMap, "lastTransitionTime"); found {
+								condition.LastTransitionTime = lt
+							}
+
+							placement.Conditions = append(placement.Conditions, condition)
+
+							// Check for PlacementSatisfied condition
+							if condition.Type == "PlacementSatisfied" {
+								placement.Satisfied = condition.Status == "True"
+								if !placement.Satisfied && condition.Message != "" {
+									placement.ReasonMessage = condition.Message
+								}
+							}
+						}
+					}
+				}
+
+				placements = append(placements, placement)
+			}
+
+			c.JSON(http.StatusOK, placements)
+		})
+
+		// Get placements by namespace
+		api.GET("/namespaces/:namespace/placements", authMiddleware, func(c *gin.Context) {
+			namespace := c.Param("namespace")
+
+			// Check if using mock data
+			if os.Getenv("DASHBOARD_USE_MOCK") == "true" {
+				// Return mock data filtered by namespace
+				mockPlacements := []Placement{}
+				if namespace == "default" {
+					mockPlacements = append(mockPlacements,
+						Placement{
+							ID:                       "placement-1",
+							Name:                     "placement-1",
+							Namespace:                "default",
+							CreationTimestamp:        time.Now().AddDate(0, 0, -15).Format(time.RFC3339),
+							ClusterSets:              []string{"global"},
+							NumberOfClusters:         intPtr(3),
+							NumberOfSelectedClusters: 3,
+							Satisfied:                true,
+						},
+						Placement{
+							ID:                       "placement-2",
+							Name:                     "placement-2",
+							Namespace:                "default",
+							CreationTimestamp:        time.Now().AddDate(0, 0, -5).Format(time.RFC3339),
+							ClusterSets:              []string{"east", "west"},
+							NumberOfClusters:         intPtr(2),
+							NumberOfSelectedClusters: 1,
+							Satisfied:                false,
+							ReasonMessage:            "Not enough clusters match the placement requirements",
+						},
+					)
+				} else if namespace == "app-team-1" {
+					mockPlacements = append(mockPlacements,
+						Placement{
+							ID:                       "placement-3",
+							Name:                     "placement-3",
+							Namespace:                "app-team-1",
+							CreationTimestamp:        time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
+							ClusterSets:              []string{"global"},
+							NumberOfSelectedClusters: 2,
+							Satisfied:                true,
+						},
+					)
+				}
+				c.JSON(http.StatusOK, mockPlacements)
+				return
+			}
+
+			// Ensure we have a client before proceeding
+			if dynamicClient == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not initialized"})
+				return
+			}
+
+			// List real placements in the specified namespace
+			list, err := dynamicClient.Resource(placementResource).Namespace(namespace).List(ctx, metav1.ListOptions{})
+			if err != nil {
+				if debugMode {
+					log.Printf("Error listing placements in namespace %s: %v", namespace, err)
+				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			// Convert to our simplified Placement format (similar to the code above)
+			placements := make([]Placement, 0, len(list.Items))
+			// ... Same conversion code as in the previous endpoint ...
+
+			c.JSON(http.StatusOK, placements)
+		})
+
+		// Get a specific placement
+		api.GET("/namespaces/:namespace/placements/:name", authMiddleware, func(c *gin.Context) {
+			namespace := c.Param("namespace")
+			name := c.Param("name")
+
+			// Check if using mock data
+			if os.Getenv("DASHBOARD_USE_MOCK") == "true" {
+				// Return mock data for the specific placement
+				var mockPlacement Placement
+
+				if namespace == "default" && name == "placement-1" {
+					mockPlacement = Placement{
+						ID:                       "placement-1",
+						Name:                     "placement-1",
+						Namespace:                "default",
+						CreationTimestamp:        time.Now().AddDate(0, 0, -15).Format(time.RFC3339),
+						ClusterSets:              []string{"global"},
+						NumberOfClusters:         intPtr(3),
+						NumberOfSelectedClusters: 3,
+						Predicates: []Predicate{
+							{
+								RequiredClusterSelector: &RequiredClusterSelector{
+									LabelSelector: &LabelSelectorWithExpressions{
+										MatchLabels: map[string]string{
+											"env": "production",
+										},
+									},
+								},
+							},
+						},
+						PrioritizerPolicy: &PrioritizerPolicy{
+							Mode: "Additive",
+							Configurations: []PrioritizerConfig{
+								{
+									ScoreCoordinate: &ScoreCoordinate{
+										Type:    "BuiltIn",
+										BuiltIn: "ResourceAllocatableMemory",
+									},
+									Weight: 2,
+								},
+							},
+						},
+						DecisionGroups: []DecisionGroupStatus{
+							{
+								DecisionGroupIndex: 0,
+								DecisionGroupName:  "",
+								Decisions:          []string{"placement-1-decision-1"},
+								ClusterCount:       3,
+							},
+						},
+						Conditions: []Condition{
+							{
+								Type:               "PlacementSatisfied",
+								Status:             "True",
+								Reason:             "PlacementSatisfied",
+								Message:            "Placement requirements are satisfied",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+							},
+						},
+						Satisfied: true,
+					}
+					c.JSON(http.StatusOK, mockPlacement)
+					return
+				} else if namespace == "default" && name == "placement-2" {
+					mockPlacement = Placement{
+						ID:                       "placement-2",
+						Name:                     "placement-2",
+						Namespace:                "default",
+						CreationTimestamp:        time.Now().AddDate(0, 0, -5).Format(time.RFC3339),
+						ClusterSets:              []string{"east", "west"},
+						NumberOfClusters:         intPtr(2),
+						NumberOfSelectedClusters: 1,
+						Predicates: []Predicate{
+							{
+								RequiredClusterSelector: &RequiredClusterSelector{
+									ClaimSelector: &ClaimSelectorWithExpressions{
+										MatchExpressions: []MatchExpression{
+											{
+												Key:      "platform.open-cluster-management.io",
+												Operator: "In",
+												Values:   []string{"AWS"},
+											},
+										},
+									},
+								},
+							},
+						},
+						DecisionGroups: []DecisionGroupStatus{
+							{
+								DecisionGroupIndex: 0,
+								DecisionGroupName:  "",
+								Decisions:          []string{"placement-2-decision-1"},
+								ClusterCount:       1,
+							},
+						},
+						Conditions: []Condition{
+							{
+								Type:               "PlacementSatisfied",
+								Status:             "False",
+								Reason:             "NotEnoughClusters",
+								Message:            "Not enough clusters match the placement requirements",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+							},
+						},
+						Satisfied:     false,
+						ReasonMessage: "Not enough clusters match the placement requirements",
+					}
+					c.JSON(http.StatusOK, mockPlacement)
+					return
+				} else if namespace == "app-team-1" && name == "placement-3" {
+					mockPlacement = Placement{
+						ID:                       "placement-3",
+						Name:                     "placement-3",
+						Namespace:                "app-team-1",
+						CreationTimestamp:        time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
+						ClusterSets:              []string{"global"},
+						NumberOfSelectedClusters: 2,
+						Predicates: []Predicate{
+							{
+								RequiredClusterSelector: &RequiredClusterSelector{
+									CelSelector: &CelSelectorWithExpressions{
+										CelExpressions: []string{
+											`managedCluster.status.version.kubernetes == "v1.31.0"`,
+										},
+									},
+								},
+							},
+						},
+						Tolerations: []PlacementToleration{
+							{
+								Key:      "gpu",
+								Value:    "true",
+								Operator: "Equal",
+							},
+						},
+						DecisionStrategy: &DecisionStrategy{
+							GroupStrategy: GroupStrategy{
+								DecisionGroups: []DecisionGroup{
+									{
+										GroupName: "canary",
+										GroupClusterSelector: GroupClusterSelector{
+											LabelSelector: &LabelSelectorWithExpressions{
+												MatchLabels: map[string]string{
+													"canary": "true",
+												},
+											},
+										},
+									},
+								},
+								ClustersPerDecisionGroup: "50%",
+							},
+						},
+						DecisionGroups: []DecisionGroupStatus{
+							{
+								DecisionGroupIndex: 0,
+								DecisionGroupName:  "canary",
+								Decisions:          []string{"placement-3-decision-1"},
+								ClusterCount:       1,
+							},
+							{
+								DecisionGroupIndex: 1,
+								DecisionGroupName:  "",
+								Decisions:          []string{"placement-3-decision-2"},
+								ClusterCount:       1,
+							},
+						},
+						Conditions: []Condition{
+							{
+								Type:               "PlacementSatisfied",
+								Status:             "True",
+								Reason:             "PlacementSatisfied",
+								Message:            "Placement requirements are satisfied",
+								LastTransitionTime: time.Now().Format(time.RFC3339),
+							},
+						},
+						Satisfied: true,
+					}
+					c.JSON(http.StatusOK, mockPlacement)
+					return
+				} else {
+					c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Mock placement %s not found in namespace %s", name, namespace)})
+					return
+				}
+			}
+
+			// Ensure we have a client before proceeding
+			if dynamicClient == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not initialized"})
+				return
+			}
+
+			// Get the real placement
+			item, err := dynamicClient.Resource(placementResource).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				if debugMode {
+					log.Printf("Error getting placement %s in namespace %s: %v", name, namespace, err)
+				}
+				c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Placement %s not found in namespace %s", name, namespace)})
+				return
+			}
+
+			// Process the retrieved placement (similar to the code above)
+			// TODO: Implement full placement details
+			c.JSON(http.StatusOK, Placement{
+				ID:        string(item.GetUID()),
+				Name:      item.GetName(),
+				Namespace: item.GetNamespace(),
+			})
+		})
+
+		// Get placement decisions for a specific placement
+		api.GET("/namespaces/:namespace/placements/:name/decisions", authMiddleware, func(c *gin.Context) {
+			namespace := c.Param("namespace")
+			name := c.Param("name")
+
+			// Check if using mock data
+			if os.Getenv("DASHBOARD_USE_MOCK") == "true" {
+				// Return mock decisions for the placement
+				mockDecisions := []PlacementDecision{}
+
+				if namespace == "default" && name == "placement-1" {
+					mockDecisions = append(mockDecisions, PlacementDecision{
+						ID:        "placement-1-decision-1",
+						Name:      "placement-1-decision-1",
+						Namespace: "default",
+						Decisions: []ClusterDecision{
+							{
+								ClusterName: "mock-cluster-1",
+								Reason:      "Selected by placement",
+							},
+							{
+								ClusterName: "mock-cluster-2",
+								Reason:      "Selected by placement",
+							},
+							{
+								ClusterName: "mock-cluster-3",
+								Reason:      "Selected by placement",
+							},
+						},
+					})
+				} else if namespace == "default" && name == "placement-2" {
+					mockDecisions = append(mockDecisions, PlacementDecision{
+						ID:        "placement-2-decision-1",
+						Name:      "placement-2-decision-1",
+						Namespace: "default",
+						Decisions: []ClusterDecision{
+							{
+								ClusterName: "mock-cluster-1",
+								Reason:      "Selected by placement",
+							},
+						},
+					})
+				} else if namespace == "app-team-1" && name == "placement-3" {
+					mockDecisions = append(mockDecisions,
+						PlacementDecision{
+							ID:        "placement-3-decision-1",
+							Name:      "placement-3-decision-1",
+							Namespace: "app-team-1",
+							Decisions: []ClusterDecision{
+								{
+									ClusterName: "mock-cluster-3",
+									Reason:      "Selected by placement (canary group)",
+								},
+							},
+						},
+						PlacementDecision{
+							ID:        "placement-3-decision-2",
+							Name:      "placement-3-decision-2",
+							Namespace: "app-team-1",
+							Decisions: []ClusterDecision{
+								{
+									ClusterName: "mock-cluster-4",
+									Reason:      "Selected by placement",
+								},
+							},
+						},
+					)
+				}
+
+				c.JSON(http.StatusOK, mockDecisions)
+				return
+			}
+
+			// Ensure we have a client before proceeding
+			if dynamicClient == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not initialized"})
+				return
+			}
+
+			// List placement decisions for the placement
+			// Create a label selector for the placement
+			labelSelector := fmt.Sprintf("%s=%s", "cluster.open-cluster-management.io/placement", name)
+
+			// List all placement decisions that belong to this placement
+			list, err := dynamicClient.Resource(placementDecisionResource).Namespace(namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: labelSelector,
+			})
+			if err != nil {
+				if debugMode {
+					log.Printf("Error listing decisions for placement %s in namespace %s: %v", name, namespace, err)
+				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			// Convert to our simplified PlacementDecision format
+			decisions := make([]PlacementDecision, 0, len(list.Items))
+			for _, item := range list.Items {
+				decision := PlacementDecision{
+					ID:        string(item.GetUID()),
+					Name:      item.GetName(),
+					Namespace: item.GetNamespace(),
+					Decisions: []ClusterDecision{},
+				}
+
+				// Extract decisions from status
+				status, found, err := unstructured.NestedMap(item.Object, "status")
+				if err == nil && found {
+					if clusterDecisions, found, _ := unstructured.NestedSlice(status, "decisions"); found {
+						for _, cd := range clusterDecisions {
+							cdMap, ok := cd.(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							clusterDecision := ClusterDecision{}
+
+							if clusterName, found, _ := unstructured.NestedString(cdMap, "clusterName"); found {
+								clusterDecision.ClusterName = clusterName
+							}
+
+							if reason, found, _ := unstructured.NestedString(cdMap, "reason"); found {
+								clusterDecision.Reason = reason
+							} else {
+								clusterDecision.Reason = "Selected by placement"
+							}
+
+							decision.Decisions = append(decision.Decisions, clusterDecision)
+						}
+					}
+				}
+
+				decisions = append(decisions, decision)
+			}
+
+			c.JSON(http.StatusOK, decisions)
 		})
 
 		// Stream clusters with Server-Sent Events (SSE)
