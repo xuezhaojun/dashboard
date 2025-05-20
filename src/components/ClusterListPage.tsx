@@ -302,8 +302,7 @@ export default function ClusterListPage() {
           title={detailCluster.name}
           onClose={handleCloseDetail}
         >
-          <ClusterDetailContent cluster={detailCluster} compact />
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+          <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-start" }}>
             <Button
               variant="contained"
               onClick={handleViewFullDetails}
@@ -312,6 +311,7 @@ export default function ClusterListPage() {
               View Full Details
             </Button>
           </Box>
+          <ClusterDetailContent cluster={detailCluster} compact />
         </DrawerLayout>
       )}
     </Box>
