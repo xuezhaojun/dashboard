@@ -1,4 +1,4 @@
-module github.com/your-org/ocm-dashboard/backend
+module github.com/xuezhaojun/ocm-dashboard/backend
 
 go 1.24.1
 
