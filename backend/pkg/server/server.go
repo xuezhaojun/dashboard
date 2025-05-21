@@ -62,51 +62,51 @@ func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode boo
 
 		// Register cluster routes
 		api.GET("/clusters", authMiddleware, func(c *gin.Context) {
-			handlers.GetClusters(c, ocmClient, ctx, debugMode)
+			handlers.GetClusters(c, ocmClient, ctx)
 		})
 
 		api.GET("/clusters/:name", authMiddleware, func(c *gin.Context) {
-			handlers.GetCluster(c, ocmClient, ctx, debugMode)
+			handlers.GetCluster(c, ocmClient, ctx)
 		})
 
 		// Register cluster addon routes
 		api.GET("/clusters/:name/addons", authMiddleware, func(c *gin.Context) {
-			handlers.GetClusterAddons(c, ocmClient, ctx, debugMode)
+			handlers.GetClusterAddons(c, ocmClient, ctx)
 		})
 
 		api.GET("/clusters/:name/addons/:addonName", authMiddleware, func(c *gin.Context) {
-			handlers.GetClusterAddon(c, ocmClient, ctx, debugMode)
+			handlers.GetClusterAddon(c, ocmClient, ctx)
 		})
 
 		// Register clusterset routes
 		api.GET("/clustersets", authMiddleware, func(c *gin.Context) {
-			handlers.GetClusterSets(c, ocmClient, ctx, debugMode)
+			handlers.GetClusterSets(c, ocmClient, ctx)
 		})
 
 		api.GET("/clustersets/:name", authMiddleware, func(c *gin.Context) {
-			handlers.GetClusterSet(c, ocmClient, ctx, debugMode)
+			handlers.GetClusterSet(c, ocmClient, ctx)
 		})
 
 		// Register placement routes
 		api.GET("/placements", authMiddleware, func(c *gin.Context) {
-			handlers.GetPlacements(c, ocmClient, ctx, debugMode)
+			handlers.GetPlacements(c, ocmClient, ctx)
 		})
 
 		api.GET("/namespaces/:namespace/placements", authMiddleware, func(c *gin.Context) {
-			handlers.GetPlacementsByNamespace(c, ocmClient, ctx, debugMode)
+			handlers.GetPlacementsByNamespace(c, ocmClient, ctx)
 		})
 
 		api.GET("/namespaces/:namespace/placements/:name", authMiddleware, func(c *gin.Context) {
-			handlers.GetPlacement(c, ocmClient, ctx, debugMode)
+			handlers.GetPlacement(c, ocmClient, ctx)
 		})
 
 		api.GET("/namespaces/:namespace/placements/:name/decisions", authMiddleware, func(c *gin.Context) {
-			handlers.GetPlacementDecisions(c, ocmClient, ctx, debugMode)
+			handlers.GetPlacementDecisions(c, ocmClient, ctx)
 		})
 
 		// Register streaming routes
 		api.GET("/stream/clusters", authMiddleware, func(c *gin.Context) {
-			handlers.StreamClusters(c, ocmClient, ctx, debugMode)
+			handlers.StreamClusters(c, ocmClient.Interface, ctx)
 		})
 	}
 

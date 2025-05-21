@@ -68,7 +68,6 @@ type ClusterSetStatus struct {
 type ClusterSet struct {
 	ID                string            `json:"id"`
 	Name              string            `json:"name"`
-	ClusterCount      int               `json:"clusterCount"`
 	Labels            map[string]string `json:"labels,omitempty"`
 	Spec              ClusterSetSpec    `json:"spec,omitempty"`
 	Status            ClusterSetStatus  `json:"status,omitempty"`
