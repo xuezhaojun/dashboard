@@ -12,7 +12,7 @@ export interface ManifestWork {
 }
 
 export interface Manifest {
-  rawExtension?: Record<string, any>;
+  rawExtension?: Record<string, unknown>;
 }
 
 export interface Condition {
