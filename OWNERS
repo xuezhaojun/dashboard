@@ -1,0 +1,4 @@
+# OWNERS file using GitHub CODEOWNERS syntax
+
+# Set xuezhaojun as the temporary owner for the entire repository
+* @xuezhaojun
