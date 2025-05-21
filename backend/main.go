@@ -16,9 +16,9 @@ func main() {
 	ctx := context.Background()
 
 	// Initialize Kubernetes client
-	dynamicClient := client.CreateKubernetesClient(debugMode)
+	ocmClient := client.CreateKubernetesClient(debugMode)
 
 	// Set up and run the server
-	r := server.SetupServer(dynamicClient, ctx, debugMode)
+	r := server.SetupServer(ocmClient, ctx, debugMode)
 	server.RunServer(r)
 }

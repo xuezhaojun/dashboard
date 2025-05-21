@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -13,7 +12,7 @@ import (
 )
 
 // CreateKubernetesClient initializes a connection to the Kubernetes API
-func CreateKubernetesClient(debugMode bool) dynamic.Interface {
+func CreateKubernetesClient(debugMode bool) *OCMClient {
 	// Check if using mock data
 	useMockData := os.Getenv("DASHBOARD_USE_MOCK") == "true"
 
@@ -77,14 +76,14 @@ func CreateKubernetesClient(debugMode bool) dynamic.Interface {
 		}
 	}
 
-	// Create dynamic client
-	dynamicClient, err := dynamic.NewForConfig(config)
+	// Create OCM client
+	ocmClient, err := CreateOCMClient(config)
 	if err != nil {
-		log.Fatalf("Error creating dynamic client: %v", err)
+		log.Fatalf("Error creating OCM client: %v", err)
 	}
 
 	// Debug message to verify connection
 	log.Println("Successfully created Kubernetes client")
 
-	return dynamicClient
+	return ocmClient
 }
