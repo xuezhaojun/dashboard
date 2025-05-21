@@ -87,6 +87,24 @@ func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode boo
 			handlers.GetClusterSet(c, ocmClient, ctx)
 		})
 
+		// Register clustersetbinding routes
+		api.GET("/namespaces/:namespace/clustersetbindings", authMiddleware, func(c *gin.Context) {
+			handlers.GetClusterSetBindings(c, ocmClient, ctx)
+		})
+
+		api.GET("/namespaces/:namespace/clustersetbindings/:name", authMiddleware, func(c *gin.Context) {
+			handlers.GetClusterSetBinding(c, ocmClient, ctx)
+		})
+
+		// Register manifestwork routes
+		api.GET("/namespaces/:namespace/manifestworks", authMiddleware, func(c *gin.Context) {
+			handlers.GetManifestWorks(c, ocmClient, ctx)
+		})
+
+		api.GET("/namespaces/:namespace/manifestworks/:name", authMiddleware, func(c *gin.Context) {
+			handlers.GetManifestWork(c, ocmClient, ctx)
+		})
+
 		// Register placement routes
 		api.GET("/placements", authMiddleware, func(c *gin.Context) {
 			handlers.GetPlacements(c, ocmClient, ctx)
