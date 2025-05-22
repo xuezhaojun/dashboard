@@ -305,11 +305,7 @@ const ClustersetList = () => {
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      <Chip
-                        label={clusterSetCounts[clusterSet.id] || 0}
-                        size="small"
-                        color="primary"
-                      />
+                      {clusterSetCounts[clusterSet.id] || 0}
                     </TableCell>
                     <TableCell>
                       {clusterSet.spec?.clusterSelector?.selectorType || "N/A"}
