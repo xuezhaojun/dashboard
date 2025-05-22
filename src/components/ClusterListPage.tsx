@@ -67,20 +67,21 @@ export default function ClusterListPage() {
     { initialData: selectedClusterData, skipFetch: !selectedClusterId }
   );
 
+  // Function to load clusters data
+  const loadClusters = async () => {
+    try {
+      setLoading(true);
+      const clusterData = await fetchClusters();
+      setClusters(clusterData);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching cluster list:', error);
+      setLoading(false);
+    }
+  };
+
   // Load clusters on component mount
   useEffect(() => {
-    const loadClusters = async () => {
-      try {
-        setLoading(true);
-        const clusterData = await fetchClusters();
-        setClusters(clusterData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching cluster list:', error);
-        setLoading(false);
-      }
-    };
-
     loadClusters();
   }, []);
 
@@ -206,8 +207,8 @@ export default function ClusterListPage() {
             </Grid>
             <Grid size={{ xs: 12, md: 2 }} sx={{ display: "flex", justifyContent: "flex-end" }}>
               <Tooltip title="Refresh">
-                <IconButton>
-                  <RefreshIcon />
+                <IconButton onClick={loadClusters} disabled={loading}>
+                  {loading ? <CircularProgress size={24} /> : <RefreshIcon />}
                 </IconButton>
               </Tooltip>
             </Grid>

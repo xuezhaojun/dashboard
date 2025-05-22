@@ -4,11 +4,9 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import ClusterDetailPage from './components/ClusterDetailPage';
 import Login from './components/Login';
 import AppShell from './components/layout/AppShell';
-import PlaceholderPage from './components/PlaceholderPage';
 import OverviewPage from './components/OverviewPage';
 import ClusterListPage from './components/ClusterListPage';
 import ClustersetList from './components/ClustersetList';
-import ClustersetDetail from './components/ClustersetDetail';
 import PlacementListPage from './components/PlacementListPage';
 import { MuiThemeProvider } from './theme/ThemeProvider';
 
@@ -48,9 +46,7 @@ function AppContent() {
           <Route path="clusters" element={<ClusterListPage />} />
           <Route path="clusters/:name" element={<ClusterDetailPage />} />
           <Route path="placements" element={<PlacementListPage />} />
-          <Route path="settings" element={<PlaceholderPage title="Settings" />} />
           <Route path="clustersets" element={<ClustersetList />} />
-          <Route path="clustersets/:name" element={<ClustersetDetail />} />
           <Route index element={<Navigate to="/overview" />} />
           <Route path="*" element={<Navigate to="/overview" />} />
         </Route>
