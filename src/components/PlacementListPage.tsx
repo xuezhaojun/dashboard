@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -42,6 +42,7 @@ export default function PlacementListPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterNamespace, setFilterNamespace] = useState("all");
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,6 +51,17 @@ export default function PlacementListPage() {
 
   // Find the selected placement in the list
   const selectedPlacementData = placements.find(p => p.id === selectedPlacementId);
+
+  // Get unique namespaces from placements
+  const uniqueNamespaces = useMemo(() => {
+    const namespaces = new Set<string>();
+    placements.forEach(placement => {
+      if (placement.namespace) {
+        namespaces.add(placement.namespace);
+      }
+    });
+    return Array.from(namespaces).sort();
+  }, [placements]);
 
   // Load placements on component mount
   useEffect(() => {
@@ -76,6 +88,10 @@ export default function PlacementListPage() {
     setFilterStatus(event.target.value);
   };
 
+  const handleFilterNamespaceChange = (event: SelectChangeEvent) => {
+    setFilterNamespace(event.target.value);
+  };
+
   const handlePlacementSelect = (placementId: string) => {
     // Update URL with selected placement
     setSearchParams({ selected: placementId });
@@ -97,7 +113,7 @@ export default function PlacementListPage() {
     );
   };
 
-  // Filter placements based on search term and status filter
+  // Filter placements based on search term, status filter, and namespace filter
   const filteredPlacements = placements.filter(placement => {
     const matchesSearch =
       placement.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,7 +124,11 @@ export default function PlacementListPage() {
       (filterStatus === 'succeeded' && placement.succeeded) ||
       (filterStatus === 'not-succeeded' && !placement.succeeded);
 
-    return matchesSearch && matchesStatus;
+    const matchesNamespace =
+      filterNamespace === 'all' ||
+      placement.namespace === filterNamespace;
+
+    return matchesSearch && matchesStatus && matchesNamespace;
   });
 
   const placementStatusText = (placement: Placement) => {
@@ -137,7 +157,7 @@ export default function PlacementListPage() {
         {/* Filters and search */}
         <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
           <Grid container spacing={2} alignItems="center" sx={{ width: '100%' }}>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 fullWidth
                 placeholder="Search placements..."
@@ -154,13 +174,24 @@ export default function PlacementListPage() {
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 5 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <FormControl fullWidth size="small">
                 <InputLabel id="filter-status-label">Status</InputLabel>
                 <Select labelId="filter-status-label" value={filterStatus} label="Status" onChange={handleFilterStatusChange}>
                   <MenuItem value="all">All Statuses</MenuItem>
                   <MenuItem value="succeeded">Succeeded</MenuItem>
                   <MenuItem value="not-succeeded">Not Succeeded</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="filter-namespace-label">Namespace</InputLabel>
+                <Select labelId="filter-namespace-label" value={filterNamespace} label="Namespace" onChange={handleFilterNamespaceChange}>
+                  <MenuItem value="all">All Namespaces</MenuItem>
+                  {uniqueNamespaces.map(namespace => (
+                    <MenuItem key={namespace} value={namespace}>{namespace}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
