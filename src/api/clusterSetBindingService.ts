@@ -19,6 +19,36 @@ export interface ClusterSetBinding {
   };
 }
 
+export interface ManagedClusterSetBinding {
+  id: string;
+  name: string;
+  namespace: string;
+  clusterSet: string;
+  bound: boolean;
+  creationTimestamp?: string;
+}
+
+// Raw API response interface
+interface RawBindingData {
+  id?: string;
+  uid?: string;
+  name: string;
+  namespace: string;
+  creationTimestamp?: string;
+  spec?: {
+    clusterSet?: string;
+  };
+  status?: {
+    conditions?: Array<{
+      type: string;
+      status: string;
+      reason?: string;
+      message?: string;
+      lastTransitionTime?: string;
+    }>;
+  };
+}
+
 // Make sure we also export a type to avoid compiler issues
 export type { ClusterSetBinding as ClusterSetBindingType };
 
@@ -26,7 +56,7 @@ export type { ClusterSetBinding as ClusterSetBindingType };
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
 // Fetch all cluster set bindings for a namespace
-export const fetchClusterSetBindings = async (namespace: string): Promise<ClusterSetBinding[]> => {
+export const fetchNamespaceClusterSetBindings = async (namespace: string): Promise<ClusterSetBinding[]> => {
   // Use mock data in development mode unless specifically requested to use real API
   if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
     return new Promise((resolve) => {
@@ -161,5 +191,71 @@ export const fetchClusterSetBindingByName = async (namespace: string, name: stri
   } catch (error) {
     console.error(`Error fetching cluster set binding ${namespace}/${name}:`, error);
     return null;
+  }
+};
+
+// Fetch all cluster set bindings across all namespaces
+export const fetchClusterSetBindings = async (): Promise<ManagedClusterSetBinding[]> => {
+  // Use mock data in development mode unless specifically requested to use real API
+  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          {
+            id: "default-default",
+            name: "default",
+            namespace: "default",
+            clusterSet: "default",
+            bound: true,
+            creationTimestamp: "2025-05-20T13:51:37Z"
+          },
+          {
+            id: "open-cluster-management-addon-global",
+            name: "global",
+            namespace: "open-cluster-management-addon",
+            clusterSet: "global",
+            bound: true,
+            creationTimestamp: "2025-05-20T08:52:35Z"
+          }
+        ]);
+      }, 800);
+    });
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/clustersetbindings`, {
+      headers: createHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json() as RawBindingData[];
+
+    return data.map((binding: RawBindingData) => ({
+      id: binding.id || binding.uid || `${binding.namespace}-${binding.name}`,
+      name: binding.name,
+      namespace: binding.namespace,
+      clusterSet: binding.spec?.clusterSet || '',
+      bound: binding.status?.conditions?.some((condition) =>
+        condition.type === 'Bound' && condition.status === 'True'
+      ) || false,
+      creationTimestamp: binding.creationTimestamp
+    }));
+  } catch (error) {
+    console.error('Error fetching all cluster set bindings:', error);
+    return [];
+  }
+};
+
+// Fetch all bindings for a specific cluster set
+export const fetchClusterSetBindingsByClusterSet = async (clusterSetName: string): Promise<ManagedClusterSetBinding[]> => {
+  try {
+    const allBindings = await fetchClusterSetBindings();
+    return allBindings.filter(binding => binding.clusterSet === clusterSetName);
+  } catch (error) {
+    console.error(`Error fetching bindings for cluster set ${clusterSetName}:`, error);
+    return [];
   }
 };

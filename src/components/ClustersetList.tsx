@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Chip,
   IconButton,
   TextField,
   InputAdornment,
@@ -31,6 +30,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { fetchClusterSets, type ClusterSet } from '../api/clusterSetService';
 import { fetchClusters, type Cluster } from '../api/clusterService';
+import { fetchClusterSetBindings, type ManagedClusterSetBinding } from '../api/clusterSetBindingService';
 
 const ClustersetList = () => {
   const theme = useTheme();
@@ -39,10 +39,13 @@ const ClustersetList = () => {
   const [selectorTypeFilter, setSelectorTypeFilter] = useState<string>("all");
   const [clusterSets, setClusterSets] = useState<ClusterSet[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [bindings, setBindings] = useState<ManagedClusterSetBinding[]>([]);
   const [loading, setLoading] = useState(true);
   const [clustersLoading, setClustersLoading] = useState(true);
+  const [bindingsLoading, setBindingsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clusterSetCounts, setClusterSetCounts] = useState<Record<string, number>>({});
+  const [bindingCounts, setBindingCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const loadClusterSets = async () => {
@@ -76,6 +79,22 @@ const ClustersetList = () => {
     };
 
     loadClusters();
+  }, []);
+
+  useEffect(() => {
+    const loadBindings = async () => {
+      try {
+        setBindingsLoading(true);
+        const data = await fetchClusterSetBindings();
+        setBindings(data);
+        setBindingsLoading(false);
+      } catch (error) {
+        console.error('Error fetching cluster set bindings:', error);
+        setBindingsLoading(false);
+      }
+    };
+
+    loadBindings();
   }, []);
 
   // Calculate cluster counts for each cluster set
@@ -133,6 +152,20 @@ const ClustersetList = () => {
     setClusterSetCounts(counts);
   }, [clusters, clusterSets, loading, clustersLoading]);
 
+  // Calculate binding counts for each cluster set
+  useEffect(() => {
+    if (bindings.length === 0 || clusterSets.length === 0 || loading || bindingsLoading) return;
+
+    const counts: Record<string, number> = {};
+
+    clusterSets.forEach(clusterSet => {
+      const count = bindings.filter(binding => binding.clusterSet === clusterSet.name).length;
+      counts[clusterSet.id] = count;
+    });
+
+    setBindingCounts(counts);
+  }, [bindings, clusterSets, loading, bindingsLoading]);
+
   // Get unique selector types from cluster sets
   const getSelectorTypes = () => {
     const types = new Set<string>();
@@ -160,23 +193,28 @@ const ClustersetList = () => {
       try {
         setLoading(true);
         setClustersLoading(true);
+        setBindingsLoading(true);
         setError(null);
 
-        const [clusterSetsData, clustersData] = await Promise.all([
+        const [clusterSetsData, clustersData, bindingsData] = await Promise.all([
           fetchClusterSets(),
-          fetchClusters()
+          fetchClusters(),
+          fetchClusterSetBindings()
         ]);
 
         setClusterSets(clusterSetsData);
         setClusters(clustersData);
+        setBindings(bindingsData);
 
         setLoading(false);
         setClustersLoading(false);
+        setBindingsLoading(false);
       } catch (error) {
         console.error('Error refreshing data:', error);
         setError('Failed to refresh data');
         setLoading(false);
         setClustersLoading(false);
+        setBindingsLoading(false);
       }
     };
 
@@ -258,7 +296,7 @@ const ClustersetList = () => {
         </Paper>
       )}
 
-      {loading || clustersLoading ? (
+      {loading || clustersLoading || bindingsLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
         </Box>
@@ -269,6 +307,7 @@ const ClustersetList = () => {
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell align="center">Clusters</TableCell>
+                <TableCell align="center">Bindings</TableCell>
                 <TableCell>Selector Type</TableCell>
                 <TableCell>Created</TableCell>
               </TableRow>
@@ -276,7 +315,7 @@ const ClustersetList = () => {
             <TableBody>
               {filteredClusterSets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
+                  <TableCell colSpan={5} align="center">
                     <Typography sx={{ py: 2 }}>
                       No cluster sets found
                     </Typography>
@@ -306,6 +345,9 @@ const ClustersetList = () => {
                     </TableCell>
                     <TableCell align="center">
                       {clusterSetCounts[clusterSet.id] || 0}
+                    </TableCell>
+                    <TableCell align="center">
+                      {bindingCounts[clusterSet.id] || 0}
                     </TableCell>
                     <TableCell>
                       {clusterSet.spec?.clusterSelector?.selectorType || "N/A"}

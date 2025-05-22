@@ -88,6 +88,10 @@ func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode boo
 		})
 
 		// Register clustersetbinding routes
+		api.GET("/clustersetbindings", authMiddleware, func(c *gin.Context) {
+			handlers.GetAllClusterSetBindings(c, ocmClient, ctx)
+		})
+
 		api.GET("/namespaces/:namespace/clustersetbindings", authMiddleware, func(c *gin.Context) {
 			handlers.GetClusterSetBindings(c, ocmClient, ctx)
 		})

@@ -22,6 +22,7 @@ import {
 } from "@mui/icons-material";
 import { useClusterSet } from '../hooks/useClusterSet';
 import { fetchClusters, type Cluster } from '../api/clusterService';
+import { fetchClusterSetBindingsByClusterSet, type ManagedClusterSetBinding } from '../api/clusterSetBindingService';
 
 // Define the ClusterSetCluster interface to represent clusters in a set
 interface ClusterSetCluster {
@@ -34,8 +35,11 @@ const ClustersetDetail = () => {
   const { name } = useParams<{ name: string }>();
   const theme = useTheme();
   const [clusterSetClusters, setClusterSetClusters] = useState<ClusterSetCluster[]>([]);
+  const [clusterSetBindings, setClusterSetBindings] = useState<ManagedClusterSetBinding[]>([]);
   const [clustersLoading, setClustersLoading] = useState<boolean>(false);
+  const [bindingsLoading, setBindingsLoading] = useState<boolean>(false);
   const [clustersError, setClustersError] = useState<string | null>(null);
+  const [bindingsError, setBindingsError] = useState<string | null>(null);
 
   // Use our custom hook to fetch and manage cluster set data
   const {
@@ -126,6 +130,28 @@ const ClustersetDetail = () => {
     }
   }, [name, clusterSet]);
 
+  // Load bindings for this cluster set
+  useEffect(() => {
+    const fetchBindings = async () => {
+      if (!name) return;
+
+      try {
+        setBindingsLoading(true);
+        setBindingsError(null);
+
+        const bindings = await fetchClusterSetBindingsByClusterSet(name);
+        setClusterSetBindings(bindings);
+        setBindingsLoading(false);
+      } catch (error) {
+        console.error('Error fetching bindings for cluster set:', error);
+        setBindingsError('Failed to load bindings for this cluster set');
+        setBindingsLoading(false);
+      }
+    };
+
+    fetchBindings();
+  }, [name]);
+
   // Format date string
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
@@ -134,19 +160,17 @@ const ClustersetDetail = () => {
   };
 
   // Show loading state when either cluster set or clusters are loading
-  if (clusterSetLoading || clustersLoading) {
+  if (clusterSetLoading) {
     return (
       <Box sx={{ p: 3, display: 'flex', alignItems: 'center' }}>
         <CircularProgress size={24} sx={{ mr: 2 }} />
-        <Typography>
-          {clusterSetLoading ? 'Loading cluster set details...' : 'Loading clusters...'}
-        </Typography>
+        <Typography>Loading cluster set details...</Typography>
       </Box>
     );
   }
 
-  // Show error state if there's an error with cluster set or clusters
-  if (clusterSetError || !clusterSet || clustersError) {
+  // Show error state if there's an error with cluster set
+  if (clusterSetError || !clusterSet) {
     return (
       <Box sx={{ p: 3 }}>
         <Button
@@ -159,7 +183,7 @@ const ClustersetDetail = () => {
         </Button>
         <Paper sx={{ p: 3, borderRadius: 2 }}>
           <Typography color="error">
-            {clusterSetError || clustersError || 'Cluster set not found'}
+            {clusterSetError || 'Cluster set not found'}
           </Typography>
         </Paper>
       </Box>
@@ -186,6 +210,10 @@ const ClustersetDetail = () => {
             <Typography variant="body1">{clusterSetClusters.length}</Typography>
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
+            <Typography variant="body2" color="text.secondary">Binding Count</Typography>
+            <Typography variant="body1">{clusterSetBindings.length}</Typography>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary">Created</Typography>
             <Typography variant="body1">{formatDate(clusterSet.creationTimestamp)}</Typography>
           </Grid>
@@ -193,11 +221,10 @@ const ClustersetDetail = () => {
             <Typography variant="body2" color="text.secondary">Selector Type</Typography>
             <Typography variant="body1">{clusterSet.spec?.clusterSelector?.selectorType || "N/A"}</Typography>
           </Grid>
-
         </Grid>
       </Paper>
 
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
+      <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>Clusters</Typography>
 
         <TableContainer>
@@ -213,6 +240,13 @@ const ClustersetDetail = () => {
                 <TableRow>
                   <TableCell colSpan={2} align="center" sx={{ color: 'error.main' }}>
                     Error loading clusters: {clustersError}
+                  </TableCell>
+                </TableRow>
+              ) : clustersLoading ? (
+                <TableRow>
+                  <TableCell colSpan={2} align="center">
+                    <CircularProgress size={24} sx={{ mr: 1 }} />
+                    Loading clusters...
                   </TableCell>
                 </TableRow>
               ) : clusterSetClusters.length === 0 ? (
@@ -243,6 +277,67 @@ const ClustersetDetail = () => {
                         label={cluster.status}
                         size="small"
                         color={cluster.status === "Online" ? "success" : "error"}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      <Paper sx={{ p: 3, borderRadius: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>Bindings</Typography>
+
+        <TableContainer>
+          <Table>
+            <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Namespace</TableCell>
+                <TableCell>Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {bindingsError ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ color: 'error.main' }}>
+                    Error loading bindings: {bindingsError}
+                  </TableCell>
+                </TableRow>
+              ) : bindingsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center">
+                    <CircularProgress size={24} sx={{ mr: 1 }} />
+                    Loading bindings...
+                  </TableCell>
+                </TableRow>
+              ) : clusterSetBindings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center">No bindings for this cluster set</TableCell>
+                </TableRow>
+              ) : (
+                clusterSetBindings.map((binding) => (
+                  <TableRow
+                    key={binding.id}
+                    sx={{
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.05),
+                      }
+                    }}
+                  >
+                    <TableCell>
+                      <Typography sx={{ fontWeight: "medium" }}>
+                        {binding.name}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{binding.namespace}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={binding.bound ? "Bound" : "Not Bound"}
+                        size="small"
+                        color={binding.bound ? "success" : "error"}
                       />
                     </TableCell>
                   </TableRow>
