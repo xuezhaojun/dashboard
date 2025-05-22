@@ -305,7 +305,7 @@ export default function PlacementListPage() {
           {/* Basic Placement Info */}
           <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
-              Placement Overview
+              Overview
             </Typography>
 
             <Box sx={{ display: "flex", mb: 1 }}>
