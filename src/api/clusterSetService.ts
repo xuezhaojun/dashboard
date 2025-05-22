@@ -3,7 +3,6 @@ import { createHeaders } from './utils';
 export interface ClusterSet {
   id: string;
   name: string;
-  clusterCount: number;
   labels?: Record<string, string>;
   creationTimestamp?: string;
   spec?: {
@@ -41,7 +40,6 @@ export const fetchClusterSets = async (): Promise<ClusterSet[]> => {
           {
             id: "default",
             name: "default",
-            clusterCount: 2,
             creationTimestamp: "2025-05-14T09:35:54Z",
             spec: {
               clusterSelector: {
@@ -63,7 +61,6 @@ export const fetchClusterSets = async (): Promise<ClusterSet[]> => {
           {
             id: "global",
             name: "global",
-            clusterCount: 2,
             creationTimestamp: "2025-05-14T09:35:54Z",
             spec: {
               clusterSelector: {
@@ -114,7 +111,6 @@ export const fetchClusterSetByName = async (name: string): Promise<ClusterSet | 
           resolve({
             id: "default",
             name: "default",
-            clusterCount: 2,
             creationTimestamp: "2025-05-14T09:35:54Z",
             spec: {
               clusterSelector: {
@@ -137,7 +133,6 @@ export const fetchClusterSetByName = async (name: string): Promise<ClusterSet | 
           resolve({
             id: "global",
             name: "global",
-            clusterCount: 2,
             creationTimestamp: "2025-05-14T09:35:54Z",
             spec: {
               clusterSelector: {

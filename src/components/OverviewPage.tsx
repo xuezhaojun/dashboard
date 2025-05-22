@@ -16,6 +16,7 @@ export default function OverviewPage() {
   const [loading, setLoading] = useState(true)
   const [clusterSetsLoading, setClusterSetsLoading] = useState(true)
   const [placementsLoading, setPlacementsLoading] = useState(true)
+  const [clusterSetCounts, setClusterSetCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const loadClusters = async () => {
@@ -55,6 +56,61 @@ export default function OverviewPage() {
     }
     loadPlacements()
   }, [])
+
+  // Calculate cluster counts for each cluster set
+  useEffect(() => {
+    if (clusters.length === 0 || clusterSets.length === 0) return;
+
+    const counts: Record<string, number> = {};
+
+    clusterSets.forEach(clusterSet => {
+      // Get the selector type from the cluster set
+      const selectorType = clusterSet.spec?.clusterSelector?.selectorType || 'ExclusiveClusterSetLabel';
+      let count = 0;
+
+      // Filter clusters based on the selector type
+      switch (selectorType) {
+        case 'ExclusiveClusterSetLabel':
+          // Use the exclusive cluster set label to filter clusters
+          count = clusters.filter(cluster =>
+            cluster.labels &&
+            cluster.labels['cluster.open-cluster-management.io/clusterset'] === clusterSet.name
+          ).length;
+          break;
+
+        case 'LabelSelector': {
+          // Use the label selector to filter clusters
+          const labelSelector = clusterSet.spec?.clusterSelector?.labelSelector;
+
+          if (!labelSelector || Object.keys(labelSelector).length === 0) {
+            // If labelSelector is empty, select all clusters (labels.Everything())
+            count = clusters.length;
+          } else {
+            // Filter clusters based on the label selector
+            count = clusters.filter(cluster => {
+              if (!cluster.labels) return false;
+
+              // Check if all matchLabels are satisfied
+              for (const [key, value] of Object.entries(labelSelector)) {
+                if (typeof value === 'string' && cluster.labels[key] !== value) {
+                  return false;
+                }
+              }
+              return true;
+            }).length;
+          }
+        }
+          break;
+
+        default:
+          count = 0;
+      }
+
+      counts[clusterSet.id] = count;
+    });
+
+    setClusterSetCounts(counts);
+  }, [clusters, clusterSets]);
 
   // Calculate stats from real data
   const total = clusters.length
@@ -206,7 +262,7 @@ export default function OverviewPage() {
                       {set.name}
                     </Typography>
                     <Typography variant="body2" fontWeight="medium">
-                      {set.clusterCount} clusters
+                      {clusterSetCounts[set.id] || 0} clusters
                     </Typography>
                   </Box>
                 ))}

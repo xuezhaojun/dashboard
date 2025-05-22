@@ -183,7 +183,7 @@ const ClustersetDetail = () => {
         <Grid container spacing={3} sx={{ width: '100%' }}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary">Cluster Count</Typography>
-            <Typography variant="body1">{clusterSet.clusterCount}</Typography>
+            <Typography variant="body1">{clusterSetClusters.length}</Typography>
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary">Created</Typography>
