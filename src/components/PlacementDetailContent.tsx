@@ -152,7 +152,7 @@ export default function PlacementDetailContent({ placement, compact = false }: P
             </Grid>
             <Grid size={{ xs: 6, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
-                Creation Date
+                Created
               </Typography>
               <Typography variant="body1">
                 {placement.creationTimestamp

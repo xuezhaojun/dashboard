@@ -230,7 +230,7 @@ export default function ClusterListPage() {
                     Add-ons
                   </Box>
                 </TableCell>
-                <TableCell>Creation Date</TableCell>
+                <TableCell>Created</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

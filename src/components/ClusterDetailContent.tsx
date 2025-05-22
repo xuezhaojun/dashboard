@@ -177,7 +177,7 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
           </Grid>
           <Grid size={{ xs: 6, sm: 6 }}>
             <Typography variant="body2" color="text.secondary">
-              Creation Date
+              Created
             </Typography>
             <Typography variant="body1">
               {cluster.creationTimestamp
