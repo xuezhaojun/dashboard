@@ -9,17 +9,15 @@ import {
   TableHead,
   TableRow,
   Chip,
-  Button,
   Tabs,
   Tab,
 } from '@mui/material';
-import {
-  Download as DownloadIcon,
-} from '@mui/icons-material';
 import type { Cluster } from '../api/clusterService';
 import { useState } from 'react';
 import ClusterAddonsList from './ClusterAddonsList';
+import ClusterManifestWorksList from './ClusterManifestWorksList';
 import { useClusterAddons } from '../hooks/useClusterAddons';
+import { useClusterManifestWorks } from '../hooks/useClusterManifestWorks';
 
 interface ClusterDetailContentProps {
   cluster: Cluster;
@@ -105,6 +103,7 @@ function a11yProps(index: number) {
 export default function ClusterDetailContent({ cluster, compact = false }: ClusterDetailContentProps) {
   const [tabValue, setTabValue] = useState(0);
   const { addons, loading, error } = useClusterAddons(cluster.name);
+  const { manifestWorks, loading: manifestWorksLoading, error: manifestWorksError } = useClusterManifestWorks(cluster.name);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -147,6 +146,14 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
                 </Box>
               }
               {...a11yProps(1)}
+            />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <span>ManifestWorks</span>
+                </Box>
+              }
+              {...a11yProps(2)}
             />
           </Tabs>
         </Box>
@@ -354,28 +361,20 @@ export default function ClusterDetailContent({ cluster, compact = false }: Clust
           </Box>
         )}
       </Box>
-
-      {/* Actions */}
-      {!compact && (
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={() => {
-              // In a real app, this would generate a YAML representation of the cluster
-              alert('YAML download feature will be implemented in the future');
-            }}
-          >
-            Download YAML
-          </Button>
-        </Box>
-      )}
       </TabPanel>
 
       <TabPanel value={tabValue} index={1}>
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
             <ClusterAddonsList addons={addons} loading={loading} error={error} />
+          </Box>
+        </Box>
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={2}>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+            <ClusterManifestWorksList manifestWorks={manifestWorks} loading={manifestWorksLoading} error={manifestWorksError} />
           </Box>
         </Box>
       </TabPanel>
