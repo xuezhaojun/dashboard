@@ -29,8 +29,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
 } from "@mui/icons-material";
-import { fetchPlacements } from '../api/placementService';
-import type { Placement } from '../api/placementService';
+import { fetchPlacements, fetchPlacementDecisions } from '../api/placementService';
+import type { Placement, PlacementDecision } from '../api/placementService';
 import DrawerLayout from './layout/DrawerLayout';
 
 /**
@@ -45,6 +45,9 @@ export default function PlacementListPage() {
   const [filterNamespace, setFilterNamespace] = useState("all");
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingDecisions, setLoadingDecisions] = useState(false);
+  const [placementDecisions, setPlacementDecisions] = useState<PlacementDecision[]>([]);
+  const [tabValue, setTabValue] = useState(0);
 
   // Get selected placement from URL query parameter
   const selectedPlacementId = searchParams.get('selected');
@@ -80,6 +83,34 @@ export default function PlacementListPage() {
     loadPlacements();
   }, []);
 
+  // Load placement decisions for a selected placement
+  useEffect(() => {
+    const loadPlacementDecisions = async () => {
+      if (selectedPlacementData) {
+        try {
+          setLoadingDecisions(true);
+          const decisions = await fetchPlacementDecisions(
+            selectedPlacementData.namespace,
+            selectedPlacementData.name
+          );
+          setPlacementDecisions(decisions);
+          setLoadingDecisions(false);
+        } catch (error) {
+          console.error('Error fetching placement decisions:', error);
+          setLoadingDecisions(false);
+        }
+      } else {
+        // If no placement is selected, clear decisions
+        setPlacementDecisions([]);
+      }
+    };
+
+    // Load decisions for both the Clusters tab and the Decisions tab
+    if (selectedPlacementData) {
+      loadPlacementDecisions();
+    }
+  }, [selectedPlacementData]);
+
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
@@ -102,7 +133,9 @@ export default function PlacementListPage() {
     setSearchParams({});
   };
 
-  // No longer need to navigate to detailed page
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
   // Get status icon based on succeeded condition
   const getStatusIcon = (succeeded: boolean) => {
@@ -360,29 +393,56 @@ export default function PlacementListPage() {
           {selectedPlacementData.decisionGroups && selectedPlacementData.decisionGroups.length > 0 && (
             <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
-                Decision Groups
+                Clusters
               </Typography>
 
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Group Index</TableCell>
-                      <TableCell>Group Name</TableCell>
-                      <TableCell align="center">Cluster Count</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {selectedPlacementData.decisionGroups.map((group) => (
-                      <TableRow key={`${group.decisionGroupIndex}-${group.decisionGroupName}`}>
-                        <TableCell>{group.decisionGroupIndex}</TableCell>
-                        <TableCell>{group.decisionGroupName || "(default)"}</TableCell>
-                        <TableCell align="center">{group.clusterCount}</TableCell>
+              {loadingDecisions ? (
+                <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : (
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Group Index</TableCell>
+                        <TableCell>Group Name</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {selectedPlacementData.decisionGroups.flatMap((group) => {
+                        // For each decision group
+                        const rows: React.ReactNode[] = [];
+
+                        // Find the corresponding placement decisions for this group
+                        const groupDecisions = placementDecisions.filter(decision =>
+                          group.decisions.includes(decision.name)
+                        );
+
+                        // Extract cluster names from each placement decision's status
+                        groupDecisions.forEach(decision => {
+                          if (decision.decisions) {
+                            decision.decisions.forEach((decisionStatus: {clusterName: string; reason: string}) => {
+                              if (decisionStatus.clusterName) {
+                                rows.push(
+                                  <TableRow key={`${group.decisionGroupIndex}-${decisionStatus.clusterName}`}>
+                                    <TableCell>{decisionStatus.clusterName}</TableCell>
+                                    <TableCell>{group.decisionGroupIndex}</TableCell>
+                                    <TableCell>{group.decisionGroupName || "(default)"}</TableCell>
+                                  </TableRow>
+                                );
+                              }
+                            });
+                          }
+                        });
+
+                        return rows;
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </Paper>
           )}
 

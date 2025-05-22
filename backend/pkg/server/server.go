@@ -126,6 +126,23 @@ func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode boo
 			handlers.GetPlacementDecisions(c, ocmClient, ctx)
 		})
 
+		// Register placementdecision routes
+		api.GET("/placementdecisions", authMiddleware, func(c *gin.Context) {
+			handlers.GetAllPlacementDecisions(c, ocmClient, ctx)
+		})
+
+		api.GET("/namespaces/:namespace/placementdecisions", authMiddleware, func(c *gin.Context) {
+			handlers.GetPlacementDecisionsByNamespace(c, ocmClient, ctx)
+		})
+
+		api.GET("/namespaces/:namespace/placementdecisions/:name", authMiddleware, func(c *gin.Context) {
+			handlers.GetPlacementDecision(c, ocmClient, ctx)
+		})
+
+		api.GET("/namespaces/:namespace/placements/:name/placementdecisions", authMiddleware, func(c *gin.Context) {
+			handlers.GetPlacementDecisionsByPlacement(c, ocmClient, ctx)
+		})
+
 		// Register streaming routes
 		api.GET("/stream/clusters", authMiddleware, func(c *gin.Context) {
 			handlers.StreamClusters(c, ocmClient.Interface, ctx)

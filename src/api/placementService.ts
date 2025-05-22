@@ -97,11 +97,9 @@ export interface Placement {
   }[];
 
   // Calculated fields
-  satisfied?: boolean; // Deprecated: use the `succeeded` property instead
   succeeded: boolean; // Based on PlacementSatisfied condition status
   reasonMessage?: string;
   selectedClusters?: Cluster[];
-  decisions?: PlacementDecision[];
 }
 
 // Backend API base URL - will be configurable for production
@@ -188,7 +186,6 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                 lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
-            satisfied: true,
             succeeded: true
           },
           {
@@ -235,7 +232,6 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                 lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
-            satisfied: true,
             succeeded: true
           },
           {
@@ -277,7 +273,6 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                 lastTransitionTime: "2025-05-20T13:51:37Z"
               }
             ],
-            satisfied: true,
             succeeded: true
           },
           {
@@ -321,7 +316,6 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
                 lastTransitionTime: "2025-05-20T08:52:35Z"
               }
             ],
-            satisfied: true,
             succeeded: true
           }
         ]);
@@ -440,7 +434,6 @@ export const fetchPlacementByName = async (
               }
             ],
             conditions,
-            satisfied: true,
             succeeded: determineSucceededStatus(conditions),
             selectedClusters: [
               {
@@ -449,18 +442,6 @@ export const fetchPlacementByName = async (
                 status: "Online",
               }
             ],
-            decisions: [
-              {
-                name: "placement-label-claim-decision-1",
-                namespace: "default",
-                decisions: [
-                  {
-                    clusterName: "mock-cluster-1",
-                    reason: "Selected by placement"
-                  }
-                ]
-              }
-            ]
           });
         } else if (actualName === "placement-priority" && actualNamespace === "default") {
           const priorityConditions = [
@@ -509,7 +490,6 @@ export const fetchPlacementByName = async (
               }
             ],
             conditions: priorityConditions,
-            satisfied: true,
             succeeded: determineSucceededStatus(priorityConditions),
             selectedClusters: [
               {
@@ -518,18 +498,6 @@ export const fetchPlacementByName = async (
                 status: "Online",
               }
             ],
-            decisions: [
-              {
-                name: "placement-priority-decision-1",
-                namespace: "default",
-                decisions: [
-                  {
-                    clusterName: "mock-cluster-2",
-                    reason: "Selected by placement (highest ResourceAllocatableMemory)"
-                  }
-                ]
-              }
-            ]
           });
         } else if (actualName === "placement-tolerations" && actualNamespace === "default") {
           const tolerationsConditions = [
@@ -573,7 +541,6 @@ export const fetchPlacementByName = async (
               }
             ],
             conditions: tolerationsConditions,
-            satisfied: true,
             succeeded: determineSucceededStatus(tolerationsConditions),
             selectedClusters: [
               {
@@ -587,22 +554,6 @@ export const fetchPlacementByName = async (
                 status: "Online",
               }
             ],
-            decisions: [
-              {
-                name: "placement-tolerations-decision-1",
-                namespace: "default",
-                decisions: [
-                  {
-                    clusterName: "mock-cluster-3",
-                    reason: "Selected by placement"
-                  },
-                  {
-                    clusterName: "mock-cluster-4",
-                    reason: "Selected by placement"
-                  }
-                ]
-              }
-            ]
           });
         } else if (actualName === "global" && actualNamespace === "open-cluster-management-addon") {
           const globalConditions = [
@@ -648,7 +599,6 @@ export const fetchPlacementByName = async (
               }
             ],
             conditions: globalConditions,
-            satisfied: true,
             succeeded: determineSucceededStatus(globalConditions),
             selectedClusters: [
               {
@@ -662,22 +612,6 @@ export const fetchPlacementByName = async (
                 status: "Online",
               }
             ],
-            decisions: [
-              {
-                name: "global-decision-1",
-                namespace: "open-cluster-management-addon",
-                decisions: [
-                  {
-                    clusterName: "mock-cluster-5",
-                    reason: "Selected by placement"
-                  },
-                  {
-                    clusterName: "mock-cluster-6",
-                    reason: "Selected by placement"
-                  }
-                ]
-              }
-            ]
           });
         } else {
           resolve(null);
@@ -810,7 +744,7 @@ export const fetchPlacementDecisions = async (
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/namespaces/${actualNamespace}/placements/${actualName}/decisions`, {
+    const response = await fetch(`${API_BASE}/api/namespaces/${actualNamespace}/placements/${actualName}/placementdecisions`, {
       headers: createHeaders()
     });
 
@@ -822,5 +756,135 @@ export const fetchPlacementDecisions = async (
   } catch (error) {
     console.error(`Error fetching placement decisions for ${actualNamespace}/${actualName}:`, error);
     return [];
+  }
+};
+
+// Fetch all placement decisions across all namespaces
+export const fetchAllPlacementDecisions = async (): Promise<PlacementDecision[]> => {
+  // Use mock data in development mode unless specifically requested to use real API
+  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          {
+            name: "placement-label-claim-decision-1",
+            namespace: "default",
+            decisions: [
+              {
+                clusterName: "mock-cluster-1",
+                reason: "Selected by placement"
+              }
+            ]
+          },
+          {
+            name: "placement-priority-decision-1",
+            namespace: "default",
+            decisions: [
+              {
+                clusterName: "mock-cluster-2",
+                reason: "Selected by placement (highest ResourceAllocatableMemory)"
+              }
+            ]
+          },
+          {
+            name: "placement-tolerations-decision-1",
+            namespace: "default",
+            decisions: [
+              {
+                clusterName: "mock-cluster-3",
+                reason: "Selected by placement"
+              },
+              {
+                clusterName: "mock-cluster-4",
+                reason: "Selected by placement"
+              }
+            ]
+          },
+          {
+            name: "global-decision-1",
+            namespace: "open-cluster-management-addon",
+            decisions: [
+              {
+                clusterName: "mock-cluster-5",
+                reason: "Selected by placement"
+              },
+              {
+                clusterName: "mock-cluster-6",
+                reason: "Selected by placement"
+              }
+            ]
+          }
+        ]);
+      }, 800);
+    });
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/placementdecisions`, {
+      headers: createHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching all placement decisions:', error);
+    return [];
+  }
+};
+
+// Fetch placement decisions by namespace
+export const fetchPlacementDecisionsByNamespace = async (namespace: string): Promise<PlacementDecision[]> => {
+  // Use mock data in development mode unless specifically requested to use real API
+  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
+    // Filter mock data by namespace
+    const allDecisions = await fetchAllPlacementDecisions();
+    return allDecisions.filter(decision => decision.namespace === namespace);
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/placementdecisions`, {
+      headers: createHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching placement decisions for namespace ${namespace}:`, error);
+    return [];
+  }
+};
+
+// Fetch a specific placement decision by name and namespace
+export const fetchPlacementDecisionByName = async (
+  namespace: string,
+  name: string
+): Promise<PlacementDecision | null> => {
+  // Use mock data in development mode unless specifically requested to use real API
+  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
+    const allDecisions = await fetchAllPlacementDecisions();
+    return allDecisions.find(
+      decision => decision.namespace === namespace && decision.name === name
+    ) || null;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/placementdecisions/${name}`, {
+      headers: createHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching placement decision ${namespace}/${name}:`, error);
+    return null;
   }
 };
