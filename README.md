@@ -31,6 +31,8 @@
 
 A dashboard for displaying and monitoring Open Cluster Management (OCM) clusters, placements, cluster sets, manifest works, and addons.
 
+![OCM Dashboard](./public/images/demo.gif)
+
 ---
 
 ## Architecture
