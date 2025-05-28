@@ -1,0 +1,135 @@
+name: Security Scan
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.1"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          echo "## Frontend Security Audit" >> $GITHUB_STEP_SUMMARY
+          npm audit --audit-level=moderate || echo "⚠️ Frontend vulnerabilities found"
+
+      - name: Check for outdated npm packages
+        run: |
+          echo "## Outdated Frontend Packages" >> $GITHUB_STEP_SUMMARY
+          npm outdated || true
+
+      - name: Download Go dependencies
+        working-directory: ./backend
+        run: go mod download
+
+      - name: Run Go vulnerability check
+        working-directory: ./backend
+        run: |
+          echo "## Backend Security Scan" >> $GITHUB_STEP_SUMMARY
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./... || echo "⚠️ Backend vulnerabilities found"
+
+      - name: Check for outdated Go modules
+        working-directory: ./backend
+        run: |
+          echo "## Outdated Go Modules" >> $GITHUB_STEP_SUMMARY
+          go list -u -m all | grep '\[' || echo "All Go modules are up to date"
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Docker image
+        run: |
+          mkdir -p backend/static
+          cp -r dist/* backend/static/
+          docker build -t ocm-dashboard:security-scan -f backend/Dockerfile backend/
+
+      - name: Run Trivy container scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "ocm-dashboard:security-scan"
+          format: "sarif"
+          output: "trivy-container-results.sarif"
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-container-results.sarif"
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install license checker
+        run: npm install -g license-checker
+
+      - name: Check frontend licenses
+        run: |
+          echo "## Frontend License Report" >> $GITHUB_STEP_SUMMARY
+          license-checker --summary >> $GITHUB_STEP_SUMMARY || true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.1"
+
+      - name: Install Go license checker
+        run: go install github.com/google/go-licenses@latest
+
+      - name: Check backend licenses
+        working-directory: ./backend
+        run: |
+          echo "## Backend License Report" >> $GITHUB_STEP_SUMMARY
+          go-licenses report . >> $GITHUB_STEP_SUMMARY || echo "Could not generate Go license report"

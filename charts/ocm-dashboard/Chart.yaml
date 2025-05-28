@@ -1,0 +1,26 @@
+apiVersion: v2
+name: ocm-dashboard
+description: A Helm chart for OCM Dashboard - A web-based dashboard for Open Cluster Management
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - ocm
+  - open-cluster-management
+  - dashboard
+  - kubernetes
+home: https://github.com/xuezhaojun/ocm-dashboard
+sources:
+  - https://github.com/xuezhaojun/ocm-dashboard
+maintainers:
+  - name: xuezhaojun
+    email: xuezhaojun@example.com
+icon: https://raw.githubusercontent.com/open-cluster-management-io/community/main/logos/ocm-logo.png
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial release of OCM Dashboard Helm chart
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/signKey: |
+    fingerprint: <fingerprint>
+    url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=<fingerprint>

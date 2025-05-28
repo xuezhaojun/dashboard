@@ -1,0 +1,34 @@
+# Auto-assign configuration
+# Add reviewers to pull requests based on files changed
+
+# Default reviewers for all PRs
+addReviewers: true
+addAssignees: false
+
+# Number of reviewers to add
+numberOfReviewers: 1
+
+# Reviewers pool - replace with actual GitHub usernames
+reviewers:
+  - xuezhaojun  # Replace with actual maintainer usernames
+
+# Skip adding reviewers if PR is in draft
+skipDraft: true
+
+# Skip adding reviewers for specific keywords in PR title
+skipKeywords:
+  - wip
+  - draft
+  - "[skip-review]"
+
+# File-based reviewer assignment
+# Uncomment and customize based on your team structure
+# files:
+#   '**/*.go':
+#     - backend-team-member
+#   'src/**/*':
+#     - frontend-team-member
+#   '*.md':
+#     - documentation-team-member
+#   '.github/**/*':
+#     - devops-team-member

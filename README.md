@@ -21,6 +21,8 @@
   - [Backend Development](#backend-development)
   - [Connecting Frontend to Backend](#connecting-frontend-to-backend)
 - [Building for Production](#building-for-production)
+  - [Build Application](#build-application)
+  - [Docker Image](#docker-image)
 - [RBAC Requirements (For Backend)](#rbac-requirements-for-backend)
 - [Next Steps](#next-steps)
 - [License](#license)
@@ -111,13 +113,17 @@ The OCM Dashboard follows a modern architecture pattern for Kubernetes dashboard
 
 - Node.js 18+ and npm/pnpm
 - Go 1.22+ (for backend development)
+- Docker with buildx support (for building images)
 - Access to a Kubernetes cluster with OCM installed (for backend integration)
+- Make (for using the Makefile commands)
 
 ### Frontend Development
 
 ```bash
 npm install
 npm run dev
+# Or use make:
+make dev-frontend
 ```
 
 Open your browser at the URL shown in the terminal (usually http://localhost:5173)
@@ -125,13 +131,18 @@ Open your browser at the URL shown in the terminal (usually http://localhost:517
 ### Backend Development
 
 ```bash
+# Run backend with mock data (recommended for development)
+make dev-backend
+
+# Run backend with real Kubernetes connection
+make dev-backend-real
+
+# Or manually:
 cd backend
 go run main.go
-# Or use the development script:
-./run-dev.sh
 ```
 
-This script sets `DASHBOARD_USE_MOCK=true` and `DASHBOARD_DEBUG=true` by default.
+The `dev-backend` target sets `DASHBOARD_USE_MOCK=true` and `DASHBOARD_DEBUG=true` by default.
 Modify `.env.development` or set environment variables directly to change behavior (e.g., `KUBECONFIG` path, `PORT`).
 
 ### Connecting Frontend to Backend
@@ -143,8 +154,110 @@ The `VITE_API_BASE_URL` in `.env.development` (for frontend) should match the ba
 
 ## Building for Production
 
+### Build Application
+
 ```bash
-npm run build
+# Build both frontend and backend
+make build
+
+# Build frontend only
+make build-frontend
+
+# Build backend only
+make build-backend
+```
+
+### Docker Image
+
+The Docker image is automatically built and pushed to `quay.io/open-cluster-management/ocm-dashboard` when code is merged to main branch.
+
+#### Using Make (Recommended)
+
+```bash
+# Setup Docker buildx for multi-arch builds (first time only)
+make setup-buildx
+
+# Build single architecture image for local testing
+make docker-build-local
+
+# Build and push multi-architecture image with default settings
+make docker-build-push
+
+# Build with custom tag
+make docker-build-push IMAGE_TAG=v1.0.0
+
+# Build with custom registry
+make docker-build-push REGISTRY=myregistry.io/myorg IMAGE_TAG=dev
+
+# Build for specific platforms only
+make docker-build PLATFORMS=linux/amd64
+```
+
+#### Using Docker Directly
+
+```bash
+# Build single architecture image locally
+docker buildx build -t ocm-dashboard:latest --load .
+
+# Build and push multi-architecture image
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t quay.io/open-cluster-management/ocm-dashboard:latest \
+  --push .
+```
+
+#### Local Testing with Docker Compose
+
+```bash
+# Run with Docker Compose (for local development only)
+docker-compose up ocm-dashboard
+
+# Run development version with mock data
+docker-compose --profile dev up ocm-dashboard-dev
+```
+
+### Helm Chart Deployment
+
+Deploy using Helm chart:
+
+```bash
+# Add OCM Helm repository
+helm repo add ocm https://open-cluster-management.io/helm-charts
+helm repo update
+
+# Install OCM Dashboard
+helm install ocm-dashboard ocm/ocm-dashboard \
+  --namespace ocm-dashboard \
+  --create-namespace
+
+# Install with custom values
+helm install ocm-dashboard ocm/ocm-dashboard \
+  --namespace ocm-dashboard \
+  --create-namespace \
+  --set image.tag=latest \
+  --set dashboard.env.DASHBOARD_BYPASS_AUTH=true
+
+# Upgrade existing installation
+helm upgrade ocm-dashboard ocm/ocm-dashboard \
+  --namespace ocm-dashboard
+
+# Access via port-forward
+kubectl port-forward -n ocm-dashboard svc/ocm-dashboard 8080:80
+```
+
+For development with local chart:
+
+```bash
+# Install from local chart
+helm install ocm-dashboard ./charts/ocm-dashboard \
+  --namespace ocm-dashboard \
+  --create-namespace
+
+# Install with custom values file
+helm install ocm-dashboard ./charts/ocm-dashboard \
+  --namespace ocm-dashboard \
+  --create-namespace \
+  --values my-values.yaml
 ```
 
 ---
