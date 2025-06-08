@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Box, IconButton, Typography, useTheme, alpha } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 
 interface DrawerLayoutProps {
@@ -13,8 +13,6 @@ interface DrawerLayoutProps {
  * Layout component for displaying content in a drawer
  */
 export default function DrawerLayout({ children, title, icon, onClose }: DrawerLayoutProps) {
-  const theme = useTheme();
-
   return (
     <Box
       sx={{

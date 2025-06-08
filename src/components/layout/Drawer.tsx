@@ -16,7 +16,6 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import StorageIcon from '@mui/icons-material/Storage';
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
-import ExtensionIcon from '@mui/icons-material/Extension';
 import LayersIcon from '@mui/icons-material/Layers';
 
 interface DrawerProps {
