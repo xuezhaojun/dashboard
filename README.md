@@ -3,6 +3,7 @@
 ![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green)
 ![Go](https://img.shields.io/badge/go-%3E%3D1.23-blue)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xuezhaojun/dashboard)
 
 ---
 
