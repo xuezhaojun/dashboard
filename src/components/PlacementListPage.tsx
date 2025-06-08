@@ -47,7 +47,6 @@ export default function PlacementListPage() {
   const [loading, setLoading] = useState(true);
   const [loadingDecisions, setLoadingDecisions] = useState(false);
   const [placementDecisions, setPlacementDecisions] = useState<PlacementDecision[]>([]);
-  const [tabValue, setTabValue] = useState(0);
 
   // Get selected placement from URL query parameter
   const selectedPlacementId = searchParams.get('selected');
@@ -131,10 +130,6 @@ export default function PlacementListPage() {
   const handleCloseDetail = () => {
     // Remove selected parameter from URL
     setSearchParams({});
-  };
-
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
   };
 
   // Get status icon based on succeeded condition

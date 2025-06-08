@@ -107,3 +107,17 @@ help:
 	@echo "  make docker-build-local"
 	@echo "  make docker-build-push IMAGE_TAG=v1.0.0"
 	@echo "  make docker-build-push REGISTRY=myregistry.io/myorg IMAGE_TAG=dev"
+
+
+test-frontend:
+	npm run test
+
+test-backend:
+	cd backend && go test ./...
+
+test: test-frontend test-backend
+	@echo "All tests passed!"
+
+lint:
+	npm run lint
+	cd backend && go vet ./...
