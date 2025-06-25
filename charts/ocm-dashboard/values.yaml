@@ -2,18 +2,105 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 2
+# API Service Configuration
+api:
+  replicaCount: 2
+  image:
+    registry: quay.io
+    repository: open-cluster-management/dashboard-api
+    pullPolicy: IfNotPresent
+    tag: ""
 
-image:
-  registry: quay.io
-  repository: open-cluster-management/ocm-dashboard
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  # Environment variables for the API
+  env:
+    GIN_MODE: "release"
+    DASHBOARD_DEBUG: "false"
+    DASHBOARD_USE_MOCK: "false"
+    DASHBOARD_BYPASS_AUTH: "false"
+    PORT: "8080"
+
+  # Additional environment variables
+  extraEnv: []
+
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: api
+      scheme: HTTP
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+
+
+# UI Service Configuration
+ui:
+  replicaCount: 2
+  image:
+    registry: quay.io
+    repository: open-cluster-management/dashboard-ui
+    pullPolicy: IfNotPresent
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+      scheme: HTTP
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+
+# Service configuration (used by ingress template)
+service:
+  port: 80  # Default to UI port
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -44,44 +131,34 @@ securityContext:
     drop:
     - ALL
 
-service:
-  type: ClusterIP
-  port: 80
-  targetPort: 8080
-
 ingress:
-  enabled: false
+  enabled: true
   className: ""
-  annotations: {}
+  annotations:
     # kubernetes.io/ingress.class: nginx
     # cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
   hosts:
-    - host: ocm-dashboard.example.com
+    - host: ocm-dashboard.local
       paths:
-        - path: /
+        - path: /()(.*)
           pathType: Prefix
+          backend:
+            service:
+              name: ocm-dashboard
+              port:
+                number: 80
+        - path: /(api)(.*)
+          pathType: Prefix
+          backend:
+            service:
+              name: ocm-dashboard
+              port:
+                number: 8080
   tls: []
   #  - secretName: ocm-dashboard-tls
   #    hosts:
-  #      - ocm-dashboard.example.com
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
-    memory: 256Mi
-
-autoscaling:
-  enabled: false
-  minReplicas: 2
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 80
-  targetMemoryUtilizationPercentage: 80
-
-nodeSelector:
-  kubernetes.io/os: linux
+  #      - ocm-dashboard.local
 
 tolerations: []
 
@@ -98,65 +175,19 @@ affinity:
             - ocm-dashboard
         topologyKey: kubernetes.io/hostname
 
-# OCM Dashboard specific configuration
-dashboard:
-  # Environment variables for the dashboard
-  env:
-    GIN_MODE: "release"
-    DASHBOARD_DEBUG: "false"
-    DASHBOARD_USE_MOCK: "false"
-    DASHBOARD_BYPASS_AUTH: "false"
-    PORT: "8080"
-
-  # Additional environment variables
-  extraEnv: []
-  # - name: CUSTOM_VAR
-  #   value: "custom-value"
-
-  # Volume mounts
-  volumeMounts:
-    - name: tmp
-      mountPath: /tmp
-
-  # Volumes
-  volumes:
-    - name: tmp
-      emptyDir:
-        sizeLimit: 100Mi
-
-# RBAC configuration
+# RBAC configuration (only API needs cluster access)
 rbac:
   # Specifies whether RBAC resources should be created
   create: true
   # Additional rules to add to the ClusterRole
   additionalRules: []
 
-# Monitoring
-monitoring:
-  # Enable ServiceMonitor for Prometheus Operator
-  serviceMonitor:
-    enabled: false
-    interval: 30s
-    path: /metrics
-    labels: {}
+# Volume configuration for API and UI containers
+volumes:
+  - name: tmp
+    emptyDir:
+      sizeLimit: 100Mi
 
-# Health checks
-livenessProbe:
-  httpGet:
-    path: /api/clusters
-    port: http
-    scheme: HTTP
-  initialDelaySeconds: 30
-  periodSeconds: 30
-  timeoutSeconds: 10
-  failureThreshold: 3
-
-readinessProbe:
-  httpGet:
-    path: /api/clusters
-    port: http
-    scheme: HTTP
-  initialDelaySeconds: 5
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 3
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp

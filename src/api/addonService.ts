@@ -26,8 +26,9 @@ export interface ManagedClusterAddon {
   }[];
 }
 
-// Backend API base URL - will be configurable for production
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+// Backend API base URL - configurable for production
+// In production, use relative path so requests go through the same host/ingress
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8080');
 
 // Fetch all addons for a specific cluster
 export const fetchClusterAddons = async (clusterName: string): Promise<ManagedClusterAddon[]> => {

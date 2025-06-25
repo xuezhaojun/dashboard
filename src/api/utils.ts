@@ -9,7 +9,8 @@ export const createHeaders = (): HeadersInit => {
   };
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    // Token is already stored with 'Bearer ' prefix
+    headers['Authorization'] = token;
   }
 
   return headers;

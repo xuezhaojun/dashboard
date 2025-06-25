@@ -3,7 +3,6 @@
 ![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green)
 ![Go](https://img.shields.io/badge/go-%3E%3D1.23-blue)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xuezhaojun/dashboard)
 
 ---
 
@@ -15,12 +14,18 @@
   - [Backend Components](#backend-components)
 - [Current Features](#current-features)
 - [Setup & Development](#setup--development)
+  - [Prerequisites](#prerequisites)
   - [Frontend Development](#frontend-development)
   - [Backend Development](#backend-development)
   - [Connecting Frontend to Backend](#connecting-frontend-to-backend)
+- [Testing](#testing)
 - [Building for Production](#building-for-production)
   - [Build Application](#build-application)
-  - [Docker Image](#docker-image)
+  - [Docker Images](#docker-images)
+  - [Available Make Targets](#available-make-targets)
+- [Deployment](#deployment)
+  - [Helm Chart Deployment](#helm-chart-deployment)
+- [Configuration](#configuration)
 - [RBAC Requirements (For Backend)](#rbac-requirements-for-backend)
 - [Next Steps](#next-steps)
 - [License](#license)
@@ -118,10 +123,12 @@ The OCM Dashboard follows a modern architecture pattern for Kubernetes dashboard
 ### Frontend Development
 
 ```bash
+# Install dependencies and run development server
 npm install
 npm run dev
+
 # Or use make:
-make dev-frontend
+make dev-ui
 ```
 
 Open your browser at the URL shown in the terminal (usually http://localhost:5173)
@@ -129,19 +136,21 @@ Open your browser at the URL shown in the terminal (usually http://localhost:517
 ### Backend Development
 
 ```bash
-# Run backend with mock data (recommended for development)
-make dev-backend
+# Run API server with mock data (recommended for development)
+make dev-apiserver
 
-# Run backend with real Kubernetes connection
-make dev-backend-real
+# Run API server with real Kubernetes connection
+make dev-apiserver-real
 
-# Or manually:
-cd backend
-go run main.go
+# Run API server with debugger
+make debug-apiserver
+
+# Run UI server (serves built frontend)
+make dev-uiserver
 ```
 
-The `dev-backend` target sets `DASHBOARD_USE_MOCK=true` and `DASHBOARD_DEBUG=true` by default.
-Modify `.env.development` or set environment variables directly to change behavior (e.g., `KUBECONFIG` path, `PORT`).
+The `dev-apiserver` target runs the debug script which sets appropriate environment variables for development.
+You can modify the `debug.sh` script or set environment variables directly to change behavior (e.g., `KUBECONFIG` path, `PORT`).
 
 ### Connecting Frontend to Backend
 
@@ -150,24 +159,66 @@ The `VITE_API_BASE_URL` in `.env.development` (for frontend) should match the ba
 
 ---
 
+## Testing
+
+Run tests for all components:
+
+```bash
+# Run all tests (frontend, API server, and UI server)
+make test
+
+# Run frontend tests only
+make test-frontend
+
+# Run API server tests only
+make test-apiserver
+
+# Run UI server tests only
+make test-uiserver
+
+# Run linting for all components
+make lint
+
+# Test UI server functionality
+make test-uiserver-functionality
+```
+
+---
+
 ## Building for Production
 
 ### Build Application
 
 ```bash
-# Build both frontend and backend
+# Build all components (UI, UI server, and API server)
 make build
 
-# Build frontend only
-make build-frontend
+# Build UI only
+make build-ui
 
-# Build backend only
-make build-backend
+# Build UI server only
+make build-uiserver
+
+# Build API server only
+make build-apiserver
 ```
 
-### Docker Image
+### Docker Images
 
-The Docker image is automatically built and pushed to `quay.io/open-cluster-management/ocm-dashboard` when code is merged to main branch.
+The project builds two separate Docker images:
+
+- **API Image**: `dashboard-api` (Go backend)
+- **UI Image**: `dashboard-ui` (React frontend with nginx)
+
+#### Configuration Variables
+
+You can customize the build process using these variables:
+
+- `API_IMAGE_NAME`: API image name (default: `dashboard-api`)
+- `UI_IMAGE_NAME`: UI image name (default: `dashboard-ui`)
+- `IMAGE_TAG`: Docker image tag (default: `latest`)
+- `REGISTRY`: Docker registry (default: `quay.io/open-cluster-management`)
+- `PLATFORMS`: Target platforms (default: `linux/amd64,linux/arm64`)
 
 #### Using Make (Recommended)
 
@@ -175,44 +226,114 @@ The Docker image is automatically built and pushed to `quay.io/open-cluster-mana
 # Setup Docker buildx for multi-arch builds (first time only)
 make setup-buildx
 
-# Build single architecture image for local testing
+# Build both images for local testing (single architecture)
 make docker-build-local
 
-# Build and push multi-architecture image with default settings
+# Build both images for production (multi-architecture)
+make docker-build
+
+# Build and push both images
 make docker-build-push
 
-# Build with custom tag
+# Build specific components
+make docker-build-api
+make docker-build-ui
+
+# Build with custom configuration
 make docker-build-push IMAGE_TAG=v1.0.0
-
-# Build with custom registry
 make docker-build-push REGISTRY=myregistry.io/myorg IMAGE_TAG=dev
-
-# Build for specific platforms only
 make docker-build PLATFORMS=linux/amd64
+```
+
+#### Individual Image Operations
+
+```bash
+# API Image
+make docker-build-api          # Build API image
+make docker-push-api           # Push API image
+make docker-build-push-api     # Build and push API image
+
+# UI Image
+make docker-build-ui           # Build UI image
+make docker-push-ui            # Push UI image
+make docker-build-push-ui      # Build and push UI image
 ```
 
 #### Using Docker Directly
 
 ```bash
-# Build single architecture image locally
-docker buildx build -t ocm-dashboard:latest --load .
+# Build API image
+docker buildx build -f Dockerfile.api -t dashboard-api:latest --load .
 
-# Build and push multi-architecture image
+# Build UI image
+docker buildx build -f Dockerfile.ui -t dashboard-ui:latest --load .
+
+# Build and push multi-architecture images
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t quay.io/open-cluster-management/ocm-dashboard:latest \
+  -f Dockerfile.api \
+  -t quay.io/open-cluster-management/dashboard-api:latest \
+  --push .
+
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -f Dockerfile.ui \
+  -t quay.io/open-cluster-management/dashboard-ui:latest \
   --push .
 ```
 
-#### Local Testing with Docker Compose
+### Available Make Targets
 
-```bash
-# Run with Docker Compose (for local development only)
-docker-compose up ocm-dashboard
+The following make targets are available:
 
-# Run development version with mock data
-docker-compose --profile dev up ocm-dashboard-dev
-```
+**Development Targets:**
+
+- `dev-ui`: Run UI in development mode
+- `dev-uiserver`: Run UI server (serves built frontend)
+- `dev-apiserver`: Run API server with development settings
+- `dev-apiserver-real`: Run API server with real Kubernetes connection
+- `debug-apiserver`: Run API server in debug mode
+
+**Build Targets:**
+
+- `build`: Build all components (UI, UI server, and API server)
+- `build-ui`: Build UI only
+- `build-uiserver`: Build UI server only
+- `build-apiserver`: Build API server only
+
+**Docker Targets:**
+
+- `docker-build`: Build both API and UI Docker images
+- `docker-build-api`: Build API Docker image
+- `docker-build-ui`: Build UI Docker image
+- `docker-push`: Push both API and UI Docker images
+- `docker-push-api`: Push API Docker image only
+- `docker-push-ui`: Push UI Docker image only
+- `docker-build-push`: Build and push both images
+- `docker-build-push-api`: Build and push API image
+- `docker-build-push-ui`: Build and push UI image
+- `docker-build-local`: Build both images for local use
+- `docker-build-local-api`: Build API image for local use
+- `docker-build-local-ui`: Build UI image for local use
+
+**Test Targets:**
+
+- `test`: Run all tests
+- `test-frontend`: Run frontend tests
+- `test-apiserver`: Run API server tests
+- `test-uiserver`: Run UI server tests
+- `test-uiserver-functionality`: Test UI server functionality
+- `lint`: Run linters for all components
+
+**Other Targets:**
+
+- `setup-buildx`: Setup Docker buildx for multi-arch builds
+- `clean`: Clean build artifacts
+- `all`: Default target (alias for `build`)
+
+---
+
+## Deployment
 
 ### Helm Chart Deployment
 
@@ -235,12 +356,26 @@ helm install ocm-dashboard ocm/ocm-dashboard \
   --set image.tag=latest \
   --set dashboard.env.DASHBOARD_BYPASS_AUTH=true
 
+
+# Install with custom image
+helm install ocm-dashboard ./charts/ocm-dashboard \
+  --set api.image.registry=quay.io \
+  --set api.image.repository=zhaoxue/dashboard-api \
+  --set api.image.tag=latest \
+  --set api.image.pullPolicy=Always \
+  --set ui.image.registry=quay.io \
+  --set ui.image.repository=zhaoxue/dashboard-ui \
+  --set ui.image.tag=latest \
+  --set ui.image.pullPolicy=Always \
+  --namespace open-cluster-management-dashboard \
+  --create-namespace
+
 # Upgrade existing installation
 helm upgrade ocm-dashboard ocm/ocm-dashboard \
   --namespace ocm-dashboard
 
 # Access via port-forward
-kubectl port-forward -n ocm-dashboard svc/ocm-dashboard 8080:80
+kubectl port-forward -n open-cluster-management-dashboard service/ocm-dashboard 3000:80
 ```
 
 For development with local chart:
@@ -257,6 +392,24 @@ helm install ocm-dashboard ./charts/ocm-dashboard \
   --create-namespace \
   --values my-values.yaml
 ```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+**Backend Configuration:**
+
+- `DASHBOARD_USE_MOCK`: Enable mock data mode (default: `false`)
+- `DASHBOARD_DEBUG`: Enable debug logging (default: `false`)
+- `DASHBOARD_BYPASS_AUTH`: Bypass authentication (default: `false`)
+- `PORT`: Server port (default: `8080`)
+- `KUBECONFIG`: Path to kubeconfig file (for out-of-cluster access)
+
+**Frontend Configuration:**
+
+- `VITE_API_BASE_URL`: Backend API URL (default: `http://localhost:8080`)
 
 ---
 

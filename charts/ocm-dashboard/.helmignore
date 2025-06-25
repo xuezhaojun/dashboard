@@ -21,10 +21,3 @@
 .idea/
 *.tmproj
 .vscode/
-# Test files
-tests/
-test/
-*.test
-# Documentation
-*.md
-!README.md

@@ -37,22 +37,12 @@ export interface Cluster {
 // Make sure we also export a type to avoid compiler issues
 export type { Cluster as ClusterType };
 
-// Backend API base URL - will be configurable for production
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+// Backend API base URL - configurable for production
+// In production, use relative path so requests go through the same host/ingress
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8080');
 
-// Function to fetch the auth token - can be replaced with a proper auth system later
-const getAuthToken = (): string => {
-  return localStorage.getItem('authToken') || '';
-};
-
-// Helper to create headers with authorization
-const createHeaders = (): HeadersInit => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
-};
+// Import the shared header creation function
+import { createHeaders } from './utils';
 
 // Fetch all clusters
 export const fetchClusters = async (): Promise<Cluster[]> => {
@@ -374,9 +364,11 @@ export const setupClusterEventSource = (
   }
 
   // Create EventSource for SSE
-  const token = getAuthToken();
+  const token = localStorage.getItem('authToken');
+  // Extract the token part without 'Bearer ' prefix for URL parameter
+  const tokenParam = token ? token.replace('Bearer ', '') : '';
   const eventSource = new EventSource(
-    `${API_BASE}/api/stream/clusters${token ? `?token=${token}` : ''}`
+    `${API_BASE}/api/stream/clusters${tokenParam ? `?token=${tokenParam}` : ''}`
   );
 
   // Set up event listeners

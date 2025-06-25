@@ -5,11 +5,17 @@ metadata:
   labels:
     {{- include "ocm-dashboard.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: ClusterIP
   ports:
-    - port: {{ .Values.service.port }}
+    # UI Port (primary interface)
+    - port: 80
       targetPort: http
       protocol: TCP
       name: http
+    # API Port (for direct access if needed)
+    - port: 8080
+      targetPort: api
+      protocol: TCP
+      name: api
   selector:
     {{- include "ocm-dashboard.selectorLabels" . | nindent 4 }}

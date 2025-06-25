@@ -45,8 +45,9 @@ export interface ManifestResourceMeta {
 // Make sure we also export a type to avoid compiler issues
 export type { ManifestWork as ManifestWorkType };
 
-// Backend API base URL - will be configurable for production
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+// Backend API base URL - configurable for production
+// In production, use relative path so requests go through the same host/ingress
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8080');
 
 // Fetch all manifest works for a namespace
 export const fetchManifestWorks = async (namespace: string): Promise<ManifestWork[]> => {

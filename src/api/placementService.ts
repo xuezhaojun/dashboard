@@ -1,4 +1,5 @@
 import type { Cluster } from './clusterService';
+import { createHeaders } from './utils';
 
 export interface PlacementDecision {
   name: string;
@@ -102,22 +103,9 @@ export interface Placement {
   selectedClusters?: Cluster[];
 }
 
-// Backend API base URL - will be configurable for production
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
-
-// Function to fetch the auth token - can be replaced with a proper auth system later
-const getAuthToken = (): string => {
-  return localStorage.getItem('authToken') || '';
-};
-
-// Helper to create headers with authorization
-const createHeaders = (): HeadersInit => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
-};
+// Backend API base URL - configurable for production
+// In production, use relative path so requests go through the same host/ingress
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8080');
 
 // Helper to determine if a placement is succeeded based on PlacementSatisfied condition
 const determineSucceededStatus = (conditions?: { type: string; status: string }[]): boolean => {
