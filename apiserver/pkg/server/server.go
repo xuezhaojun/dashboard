@@ -11,6 +11,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	"open-cluster-management-io/lab/apiserver/pkg/auth"
 	"open-cluster-management-io/lab/apiserver/pkg/client"
 	"open-cluster-management-io/lab/apiserver/pkg/handlers"
 
@@ -59,6 +60,11 @@ func min(a, b int) int {
 
 // SetupServer initializes the HTTP server with all required routes
 func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode bool) *gin.Engine {
+	oidcConfig, err := auth.NewOIDCConfig(ctx)
+	if err != nil {
+		log.Printf("Failed to initialize OIDC config: %v", err)
+		oidcConfig = &auth.OIDCConfig{Enabled: false}
+	}
 	// Check if debug mode is enabled
 	if debugMode {
 		log.Println("Debug mode enabled")
@@ -83,7 +89,7 @@ func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode boo
 	// API routes
 	api := r.Group("/api")
 	{
-		// Enhanced authorization middleware with TokenReview validation
+		// Enhanced authorization middleware with TokenReview and OIDC validation
 		authMiddleware := func(c *gin.Context) {
 			// Check if authentication is bypassed
 			if os.Getenv("DASHBOARD_BYPASS_AUTH") == "true" {
@@ -111,7 +117,16 @@ func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode boo
 
 			token := tokenParts[1]
 
-			// Validate token using Kubernetes TokenReview API
+			if oidcConfig.Enabled {
+				if valid, err := oidcConfig.ValidateToken(ctx, token); valid && err == nil {
+					log.Println("OIDC token validation successful")
+					c.Next()
+					return
+				}
+				log.Printf("OIDC token validation failed: %v", err)
+			}
+
+			// Fallback to Kubernetes TokenReview API validation
 			if !validateToken(token, ocmClient, ctx) {
 				log.Printf("Token validation failed for token: %s...", token[:min(len(token), 10)])
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
@@ -119,7 +134,7 @@ func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode boo
 				return
 			}
 
-			log.Println("Token validation successful")
+			log.Println("Kubernetes token validation successful")
 			c.Next()
 		}
 
@@ -210,6 +225,22 @@ func SetupServer(ocmClient *client.OCMClient, ctx context.Context, debugMode boo
 		api.GET("/stream/clusters", authMiddleware, func(c *gin.Context) {
 			handlers.StreamClusters(c, ocmClient.Interface, ctx)
 		})
+
+		// Register auth routes
+		auth := api.Group("/auth")
+		{
+			auth.GET("/config", func(c *gin.Context) {
+				c.JSON(http.StatusOK, oidcConfig.GetAuthConfig())
+			})
+
+			if oidcConfig.Enabled {
+				oidc := auth.Group("/oidc")
+				{
+					oidc.GET("/login", oidcConfig.HandleLogin)
+					oidc.GET("/callback", oidcConfig.HandleCallback)
+				}
+			}
+		}
 	}
 
 	// Add health check endpoint (no authentication required)

@@ -88,7 +88,7 @@ export const fetchClusterSets = async (): Promise<ClusterSet[]> => {
 
   try {
     const response = await fetch(`${API_BASE}/api/clustersets`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -162,7 +162,7 @@ export const fetchClusterSetByName = async (name: string): Promise<ClusterSet | 
 
   try {
     const response = await fetch(`${API_BASE}/api/clustersets/${name}`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {

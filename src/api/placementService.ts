@@ -313,7 +313,7 @@ export const fetchPlacements = async (): Promise<Placement[]> => {
 
   try {
     const response = await fetch(`${API_BASE}/api/placements`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -610,7 +610,7 @@ export const fetchPlacementByName = async (
 
   try {
     const response = await fetch(`${API_BASE}/api/namespaces/${actualNamespace}/placements/${actualName}`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -733,7 +733,7 @@ export const fetchPlacementDecisions = async (
 
   try {
     const response = await fetch(`${API_BASE}/api/namespaces/${actualNamespace}/placements/${actualName}/placementdecisions`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -809,7 +809,7 @@ export const fetchAllPlacementDecisions = async (): Promise<PlacementDecision[]>
 
   try {
     const response = await fetch(`${API_BASE}/api/placementdecisions`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -834,7 +834,7 @@ export const fetchPlacementDecisionsByNamespace = async (namespace: string): Pro
 
   try {
     const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/placementdecisions`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -863,7 +863,7 @@ export const fetchPlacementDecisionByName = async (
 
   try {
     const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/placementdecisions/${name}`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {

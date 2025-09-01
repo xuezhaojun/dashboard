@@ -146,7 +146,7 @@ export const fetchClusterAddons = async (clusterName: string): Promise<ManagedCl
 
   try {
     const response = await fetch(`${API_BASE}/api/clusters/${clusterName}/addons`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -164,7 +164,7 @@ export const fetchClusterAddons = async (clusterName: string): Promise<ManagedCl
 export const fetchClusterAddonByName = async (clusterName: string, addonName: string): Promise<ManagedClusterAddon | null> => {
   try {
     const response = await fetch(`${API_BASE}/api/clusters/${clusterName}/addons/${addonName}`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {

@@ -175,7 +175,7 @@ export const fetchClusters = async (): Promise<Cluster[]> => {
 
   try {
     const response = await fetch(`${API_BASE}/api/clusters`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -337,7 +337,7 @@ export const fetchClusterByName = async (name: string): Promise<Cluster | null> 
 
   try {
     const response = await fetch(`${API_BASE}/api/clusters/${name}`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {

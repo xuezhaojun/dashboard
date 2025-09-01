@@ -10,6 +10,14 @@
 - `PORT`: Server port (default: `8080`)
 - `KUBECONFIG`: Path to kubeconfig file (for out-of-cluster access)
 
+#### OIDC Configuration
+
+- `DASHBOARD_OIDC_ENABLED`: Enable OIDC authentication (default: `false`)
+- `DASHBOARD_OIDC_ISSUER_URL`: OIDC provider issuer URL (e.g., `https://keycloak.example.com/auth/realms/myrealm`)
+- `DASHBOARD_OIDC_CLIENT_ID`: OIDC client ID
+- `DASHBOARD_OIDC_CLIENT_SECRET`: OIDC client secret
+- `DASHBOARD_OIDC_REDIRECT_URI`: OIDC redirect URI (default: `http://localhost:3000/auth/callback`)
+
 ### Frontend Configuration
 
 - `VITE_API_BASE_URL`: Backend API URL (default: `http://localhost:8080`)

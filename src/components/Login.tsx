@@ -17,14 +17,16 @@ import {
   AccordionSummary,
   AccordionDetails,
   Stack,
+  Divider,
 } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import LoginIcon from '@mui/icons-material/Login';
 
 const Login = () => {
   const [token, setToken] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
-  const { login, isLoading, error: authError } = useAuth();
+  const { login, loginWithOidc, isLoading, error: authError, isOidcEnabled } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -64,10 +66,18 @@ const Login = () => {
       } else {
         setError(`Authentication failed: ${response.status} ${response.statusText}`);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to test token. Please check your connection and try again.');
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleOidcLogin = async () => {
+    try {
+      await loginWithOidc();
+    } catch {
+      setError('OIDC login failed. Please try again.');
     }
   };
 
@@ -144,7 +154,7 @@ kubectl create token dashboard-user --duration=24h`}
             }
             subheader={
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Sign in with your Kubernetes <strong>Bearer Token</strong>
+                Sign in to access the OCM Dashboard
               </Typography>
             }
           />
@@ -164,8 +174,39 @@ kubectl create token dashboard-user --duration=24h`}
             </Box>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <CardContent sx={{ pt: 2 }}>
+          <CardContent sx={{ pt: 2 }}>
+            {isOidcEnabled && (
+              <>
+                <Box sx={{ mb: 3 }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={handleOidcLogin}
+                    disabled={isLoading}
+                    startIcon={isLoading ? <CircularProgress size={20} /> : <LoginIcon />}
+                    sx={{ 
+                      textTransform: "none",
+                      py: 1.5,
+                      fontSize: '1rem'
+                    }}
+                  >
+                    {isLoading ? 'Redirecting...' : 'Sign in with OIDC'}
+                  </Button>
+                </Box>
+
+                <Divider sx={{ my: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    or
+                  </Typography>
+                </Divider>
+              </>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                Sign in with Kubernetes Bearer Token
+              </Typography>
+              
               <TextField
                 multiline
                 fullWidth
@@ -205,17 +246,17 @@ kubectl create token dashboard-user --duration=24h`}
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <Button
                   type="submit"
-                  variant="contained"
+                  variant="outlined"
                   fullWidth
                   disabled={!token.trim() || testing}
                   sx={{ textTransform: "none" }}
                   startIcon={testing ? <CircularProgress size={20} /> : undefined}
                 >
-                  {testing ? 'Testing Token...' : 'Sign In'}
+                  {testing ? 'Testing Token...' : 'Sign In with Token'}
                 </Button>
               </Box>
-            </CardContent>
-          </form>
+            </form>
+          </CardContent>
 
           <CardActions sx={{ justifyContent: "center", pt: 0 }}>
             <Typography variant="caption" color="text.secondary">

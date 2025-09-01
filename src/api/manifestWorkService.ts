@@ -176,7 +176,7 @@ export const fetchManifestWorks = async (namespace: string): Promise<ManifestWor
 
   try {
     const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/manifestworks`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -320,7 +320,7 @@ export const fetchManifestWorkByName = async (namespace: string, name: string): 
 
   try {
     const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/manifestworks/${name}`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {

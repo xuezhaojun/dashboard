@@ -110,7 +110,7 @@ export const fetchNamespaceClusterSetBindings = async (namespace: string): Promi
 
   try {
     const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/clustersetbindings`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -181,7 +181,7 @@ export const fetchClusterSetBindingByName = async (namespace: string, name: stri
 
   try {
     const response = await fetch(`${API_BASE}/api/namespaces/${namespace}/clustersetbindings/${name}`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {
@@ -225,7 +225,7 @@ export const fetchClusterSetBindings = async (): Promise<ManagedClusterSetBindin
 
   try {
     const response = await fetch(`${API_BASE}/api/clustersetbindings`, {
-      headers: createHeaders()
+      headers: await createHeaders()
     });
 
     if (!response.ok) {

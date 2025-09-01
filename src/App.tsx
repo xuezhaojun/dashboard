@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import ClusterDetailPage from './components/ClusterDetailPage';
 import Login from './components/Login';
+import OidcCallback from './components/OidcCallback';
 import AppShell from './components/layout/AppShell';
 import OverviewPage from './components/OverviewPage';
 import ClusterListPage from './components/ClusterListPage';
@@ -31,6 +32,7 @@ function AppContent() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<OidcCallback />} />
 
         {/* Use AppShell as the parent layout for all protected routes */}
         <Route
