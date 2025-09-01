@@ -20,7 +20,7 @@ const OidcCallback = () => {
         } else {
           setError('No valid token received from OIDC provider');
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('OIDC callback error:', err);
         setError('Authentication failed. Please try again.');
         setTimeout(() => {

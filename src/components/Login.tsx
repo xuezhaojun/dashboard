@@ -73,11 +73,18 @@ const Login = () => {
     }
   };
 
+  /**
+   * Initiates OIDC authentication flow.
+   * Redirects user to the configured OIDC provider
+   * and handles potential authentication failures.
+   */
   const handleOidcLogin = async () => {
     try {
       await loginWithOidc();
-    } catch {
-      setError('OIDC login failed. Please try again.');
+    } catch (error) {
+      console.error('OIDC login failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`OIDC login failed: ${errorMessage}`);
     }
   };
 
