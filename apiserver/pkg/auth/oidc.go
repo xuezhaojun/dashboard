@@ -26,10 +26,11 @@ type OIDCConfig struct {
 }
 
 type AuthConfig struct {
-	OIDCEnabled bool   `json:"oidcEnabled"`
-	IssuerURL   string `json:"issuerUrl,omitempty"`
-	ClientID    string `json:"clientId,omitempty"`
-	RedirectURI string `json:"redirectUri,omitempty"`
+	OIDCEnabled  bool   `json:"oidcEnabled"`
+	IssuerURL    string `json:"issuerUrl,omitempty"`
+	ClientID     string `json:"clientId,omitempty"`
+	ClientSecret string `json:"clientSecret,omitempty"`
+	RedirectURI  string `json:"redirectUri,omitempty"`
 }
 
 func NewOIDCConfig(ctx context.Context) (*OIDCConfig, error) {
@@ -96,10 +97,11 @@ func (oc *OIDCConfig) GetAuthConfig() AuthConfig {
 	}
 
 	return AuthConfig{
-		OIDCEnabled: true,
-		IssuerURL:   oc.IssuerURL,
-		ClientID:    oc.ClientID,
-		RedirectURI: oc.RedirectURI,
+		OIDCEnabled:  true,
+		IssuerURL:    oc.IssuerURL,
+		ClientID:     oc.ClientID,
+		ClientSecret: oc.ClientSecret,
+		RedirectURI:  oc.RedirectURI,
 	}
 }
 

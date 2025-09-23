@@ -20,6 +20,7 @@ export interface AuthConfig {
   oidcEnabled: boolean;
   issuerUrl?: string;
   clientId?: string;
+  clientSecret?: string;
   redirectUri?: string;
 }
 
@@ -36,10 +37,12 @@ class OidcService {
       
       this.config = await response.json();
       
-      if (this.config?.oidcEnabled && this.config.issuerUrl && this.config.clientId) {
+      if (this.config?.oidcEnabled && this.config.issuerUrl && this.config.clientId && this.config.clientSecret) {
         const settings: UserManagerSettings = {
           authority: this.config.issuerUrl,
           client_id: this.config.clientId,
+          client_secret: this.config.clientSecret,
+          client_authentication: 'client_secret_post',
           redirect_uri: this.config.redirectUri || `${window.location.origin}/auth/callback`,
           response_type: 'code',
           scope: 'openid profile email',
