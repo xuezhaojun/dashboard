@@ -65,7 +65,12 @@ run-apiserver:
 # Run API server (real mode)
 .PHONY: run-apiserver-real
 run-apiserver-real:
-	cd apiserver && go run main.go
+	@if [ -n "$$KUBECONFIG" ]; then \
+		case "$$KUBECONFIG" in \
+			/*) ;; \
+			*) export KUBECONFIG="$$(pwd)/$$KUBECONFIG" ;; \
+		esac; \
+	fi && cd apiserver && go run main.go
 
 # Debug API server
 .PHONY: debug-apiserver

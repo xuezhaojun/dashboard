@@ -40,6 +40,15 @@ func CreateKubernetesClient() *OCMClient {
 		// First try to use the KUBECONFIG environment variable
 		kubeconfigEnv := os.Getenv("KUBECONFIG")
 		if kubeconfigEnv != "" {
+			// Convert relative path to absolute path
+			if !filepath.IsAbs(kubeconfigEnv) {
+				absPath, absErr := filepath.Abs(kubeconfigEnv)
+				if absErr != nil {
+					log.Printf("Error converting KUBECONFIG to absolute path: %v", absErr)
+				} else {
+					kubeconfigEnv = absPath
+				}
+			}
 			log.Printf("Using KUBECONFIG from environment: %s", kubeconfigEnv)
 			config, err = clientcmd.BuildConfigFromFlags("", kubeconfigEnv)
 			if err != nil {
