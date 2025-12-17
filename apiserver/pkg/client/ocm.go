@@ -35,6 +35,8 @@ type OCMClient struct {
 
 // CreateOCMClient initializes OCM clients using the provided config
 func CreateOCMClient(config *rest.Config) (*OCMClient, error) {
+	log.Printf("Creating OCM client with Kubernetes API server: %s", config.Host)
+
 	// Create dynamic client (for backward compatibility)
 	dynamicClient, err := dynamic.NewForConfig(config)
 	if err != nil {
